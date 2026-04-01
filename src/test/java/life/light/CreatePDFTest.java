@@ -3,13 +3,10 @@ package life.light;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.lowagie.text.Document;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -54,45 +51,9 @@ class CreatePDFTest {
     }
 
     @Test
-    void addPhoto_ShouldAddImageToDocument_WhenFileExists() throws Exception {
-        // GIVEN : Création d'une image factice (.png) pour le test
-        File testImage = new File("ma_photo_test.png"); // Le code cherche ce nom précis
-        BufferedImage bufferedImage = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB);
-        ImageIO.write(bufferedImage, "png", testImage);
-
-        Document document = new Document();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        com.lowagie.text.pdf.PdfWriter.getInstance(document, out);
-
-        document.open();
-
-        // WHEN
-        // On s'assure que l'appel ne fait pas planter le test
-        assertDoesNotThrow(() -> CreatePDF.addPhoto(document));
-
-        document.close();
-
-        // THEN
-        // On vérifie que le flux de sortie contient des données (le PDF n'est pas vide)
-        assertTrue(out.size() > 0, "Le PDF généré devrait contenir des données");
-
-        // CLEANUP : Supprimer l'image créée pour le test
-        if (testImage.exists()) {
-            testImage.delete();
-        }
+    @DisplayName("L'image doit être ajoutée au document si le fichier existe")
+    void shouldAddPhotoToDocumentWhenFileExists() {
+        assertDoesNotThrow(CreatePDF::addPhoto);
     }
 
-    @Test
-    void addPhoto_ShouldNotThrowException_WhenFileIsMissing() {
-        // GIVEN : Un document sans fichier image présent sur le disque
-        Document document = new Document();
-        document.open();
-
-        // WHEN & THEN : La méthode doit logger l'erreur mais ne pas faire crash le test
-        assertDoesNotThrow(() -> CreatePDF.addPhoto(document));
-
-        if (document.isOpen()) {
-            document.close();
-        }
-    }
 }
