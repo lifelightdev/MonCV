@@ -7,6 +7,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -52,8 +54,16 @@ class CreatePDFTest {
 
     @Test
     @DisplayName("L'image doit être ajoutée au document si le fichier existe")
-    void shouldAddPhotoToDocumentWhenFileExists() {
-        assertDoesNotThrow(CreatePDF::addPhoto);
+    void shouldAddPhotoToDocumentWhenFileExists() throws java.io.IOException {
+        // GIVEN : Création d'une image factice (.png) pour le test
+        File testImage = new File("ma_photo_test.png"); // Le code cherche ce nom précis
+        BufferedImage bufferedImage = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB);
+        ImageIO.write(bufferedImage, "png", testImage);
+        assertDoesNotThrow(() -> CreatePDF.addImage("ma_photo_test.png", 100));
+        // CLEANUP : Supprimer l'image créée pour le test
+        if (testImage.exists()) {
+            testImage.delete();
+        }
     }
 
 }
