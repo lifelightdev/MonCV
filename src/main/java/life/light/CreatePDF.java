@@ -50,12 +50,23 @@ public class CreatePDF {
             headerTable.addCell(photoCell);
 
             // --- COLONNE DROITE : NOM ET TITRE ---
-            Font titleFont = FontFactory.getFont(FontFactory.TIMES_BOLD, 24);
+            Font titleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 24);
             Font normalFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL);
 
             Phrase infoPhrase = new Phrase();
             infoPhrase.add(new Chunk(cvJson.get("nom").asText() + "\n", titleFont));
-            infoPhrase.add(new Chunk("\n" + cvJson.get("titre").asText() + "\n" + "\n", normalFont));
+            infoPhrase.add(new Chunk("\n", normalFont));
+            JsonNode titre = cvJson.get("titre");
+            if (titre != null && titre.isArray()) {
+                for (int i = 0; i < titre.size(); i++) {
+                    JsonNode exp = titre.get(i);
+                    infoPhrase.add(new Chunk(" " + exp.asText(), normalFont));
+                    if (i < titre.size() - 1) {
+                        infoPhrase.add(new Chunk("  / ", normalFont));
+                    }
+                }
+            }
+            infoPhrase.add(new Chunk("\n" + cvJson.get("titre").asText() + "\n", normalFont));
 
             JsonNode sousTitre = cvJson.get("sous titre");
             if (sousTitre != null && sousTitre.isArray()) {
@@ -75,7 +86,7 @@ public class CreatePDF {
 
             PdfPCell textCell = new PdfPCell(infoPhrase);
             textCell.setBorder(Rectangle.NO_BORDER);
-            textCell.setVerticalAlignment(com.lowagie.text.Element.ALIGN_MIDDLE);
+            textCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
             textCell.setHorizontalAlignment(Element.ALIGN_CENTER);
             textCell.setPaddingLeft(10); // Petit espace entre la photo et le texte
             headerTable.addCell(textCell);
@@ -84,7 +95,45 @@ public class CreatePDF {
             document.add(headerTable);
 
             // --- RESTE DU DOCUMENT (Expériences) ---
-            document.add(new Paragraph("Email: " + cvJson.get("email").asText(), normalFont));
+
+            // Assemblage du paragraphe du téléphone
+            Paragraph pTel = new Paragraph();
+            Image iconeTel = addImage("images" + File.separator + "Téléphone.png", FONT_SIZE_NORMAL);
+            if (iconeTel != null) {
+                pTel.add(new Chunk(iconeTel, 0, 0, true));
+            }
+            pTel.add(new Chunk(" " + cvJson.get("Téléphone").asText(), normalFont));
+            document.add(pTel);
+
+            // Assemblage du paragraphe du mail
+            Paragraph pEmail = new Paragraph();
+            Image iconeEmail = addImage("images" + File.separator + "Email.png", FONT_SIZE_NORMAL);
+            if (iconeEmail != null) {
+                pEmail.add(new Chunk(iconeEmail, 0, 0, true));
+            }
+            pEmail.add(new Chunk(" " + cvJson.get("Email").asText(), normalFont));
+            document.add(pEmail);
+
+            // Assemblage du paragraphe de GitHub
+            Paragraph pGitHub = new Paragraph();
+            Image iconeGitHub = addImage("images" + File.separator + "GitHub.png", FONT_SIZE_NORMAL);
+            if (iconeGitHub != null) {
+                pGitHub.add(new Chunk(iconeGitHub, 0, 0, true));
+            }
+            pGitHub.add(new Chunk(" " + cvJson.get("GitHub").asText(), normalFont));
+            document.add(pGitHub);
+
+
+            // Assemblage du paragraphe de LinkedIn
+            Paragraph pLinkedIn = new Paragraph();
+            Image iconeLinkedIn = addImage("images" + File.separator + "LinkedIn.png", FONT_SIZE_NORMAL);
+            if (iconeLinkedIn != null) {
+                pLinkedIn.add(new Chunk(iconeLinkedIn, 0, 0, true));
+            }
+            pLinkedIn.add(new Chunk(" " + cvJson.get("LinkedIn").asText(), normalFont));
+            document.add(pLinkedIn);
+
+
             document.add(new Paragraph("Expériences Professionnelles :", normalFont));
             JsonNode experiences = cvJson.get("experience");
             if (experiences.isArray()) {
