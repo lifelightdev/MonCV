@@ -7,8 +7,6 @@ import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
 import com.lowagie.text.Image;
-import com.lowagie.text.List;
-import com.lowagie.text.ListItem;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
 import com.lowagie.text.Rectangle;
@@ -20,11 +18,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
+import java.util.Objects;
 
 public class CreatePDF {
 
     private static final Logger logger = System.getLogger(CreatePDF.class.getName());
     public static final int FONT_SIZE_NORMAL = 12;
+    static Font titleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 24, Font.BOLD);
+    static Font subtitleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 14, Font.BOLD);
+    static Font normalFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL);
 
     static void creatPDF(JsonNode cvJson) {
         Document document = new Document();
@@ -50,25 +52,24 @@ public class CreatePDF {
             headerTable.addCell(photoCell);
 
             // --- COLONNE DROITE : NOM ET TITRE ---
-            Font titleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 24);
-            Font normalFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL);
+
 
             Phrase infoPhrase = new Phrase();
-            infoPhrase.add(new Chunk(cvJson.get("nom").asText() + "\n", titleFont));
-            infoPhrase.add(new Chunk("\n", normalFont));
-            JsonNode titre = cvJson.get("titre");
+            infoPhrase.add(new Chunk(cvJson.get("Nom").asText() + "\n", titleFont));
+            infoPhrase.add(new Chunk("\n", subtitleFont));
+            JsonNode titre = cvJson.get("Titre");
             if (titre != null && titre.isArray()) {
                 for (int i = 0; i < titre.size(); i++) {
                     JsonNode exp = titre.get(i);
-                    infoPhrase.add(new Chunk(" " + exp.asText(), normalFont));
+                    infoPhrase.add(new Chunk(" " + exp.asText(), subtitleFont));
                     if (i < titre.size() - 1) {
-                        infoPhrase.add(new Chunk("  / ", normalFont));
+                        infoPhrase.add(new Chunk("  / ", subtitleFont));
                     }
                 }
             }
-            infoPhrase.add(new Chunk("\n" + cvJson.get("titre").asText() + "\n", normalFont));
+            infoPhrase.add(new Chunk("\n" + Objects.requireNonNull(titre).asText() + "\n", subtitleFont));
 
-            JsonNode sousTitre = cvJson.get("sous titre");
+            JsonNode sousTitre = cvJson.get("Sous titre");
             if (sousTitre != null && sousTitre.isArray()) {
                 for (int i = 0; i < sousTitre.size(); i++) {
                     JsonNode exp = sousTitre.get(i);
@@ -77,9 +78,9 @@ public class CreatePDF {
                     if (icone != null) {
                         infoPhrase.add(new Chunk(icone, -2, -2, true));
                     }
-                    infoPhrase.add(new Chunk(" " + label, normalFont));
+                    infoPhrase.add(new Chunk(" " + label, subtitleFont));
                     if (i < sousTitre.size() - 1) {
-                        infoPhrase.add(new Chunk(" /  ", normalFont));
+                        infoPhrase.add(new Chunk(" /  ", subtitleFont));
                     }
                 }
             }
@@ -94,55 +95,14 @@ public class CreatePDF {
             // Ajouter la table au document
             document.add(headerTable);
 
-            // --- RESTE DU DOCUMENT (Expériences) ---
+            addIconeFirst("Téléphone", cvJson, document);
+            addIconeFirst("Email", cvJson, document);
+            addIconeFirst("GitHub", cvJson, document);
+            addIconeFirst("LinkedIn", cvJson, document);
 
-            // Assemblage du paragraphe du téléphone
-            Paragraph pTel = new Paragraph();
-            Image iconeTel = addImage("images" + File.separator + "Téléphone.png", FONT_SIZE_NORMAL);
-            if (iconeTel != null) {
-                pTel.add(new Chunk(iconeTel, 0, 0, true));
-            }
-            pTel.add(new Chunk(" " + cvJson.get("Téléphone").asText(), normalFont));
-            document.add(pTel);
+            addBulletedList("Compétences", cvJson, document);
+            addBulletedList("experience", cvJson, document);
 
-            // Assemblage du paragraphe du mail
-            Paragraph pEmail = new Paragraph();
-            Image iconeEmail = addImage("images" + File.separator + "Email.png", FONT_SIZE_NORMAL);
-            if (iconeEmail != null) {
-                pEmail.add(new Chunk(iconeEmail, 0, 0, true));
-            }
-            pEmail.add(new Chunk(" " + cvJson.get("Email").asText(), normalFont));
-            document.add(pEmail);
-
-            // Assemblage du paragraphe de GitHub
-            Paragraph pGitHub = new Paragraph();
-            Image iconeGitHub = addImage("images" + File.separator + "GitHub.png", FONT_SIZE_NORMAL);
-            if (iconeGitHub != null) {
-                pGitHub.add(new Chunk(iconeGitHub, 0, 0, true));
-            }
-            pGitHub.add(new Chunk(" " + cvJson.get("GitHub").asText(), normalFont));
-            document.add(pGitHub);
-
-
-            // Assemblage du paragraphe de LinkedIn
-            Paragraph pLinkedIn = new Paragraph();
-            Image iconeLinkedIn = addImage("images" + File.separator + "LinkedIn.png", FONT_SIZE_NORMAL);
-            if (iconeLinkedIn != null) {
-                pLinkedIn.add(new Chunk(iconeLinkedIn, 0, 0, true));
-            }
-            pLinkedIn.add(new Chunk(" " + cvJson.get("LinkedIn").asText(), normalFont));
-            document.add(pLinkedIn);
-
-
-            document.add(new Paragraph("Expériences Professionnelles :", normalFont));
-            JsonNode experiences = cvJson.get("experience");
-            if (experiences.isArray()) {
-                List list = new List(List.UNORDERED);
-                for (JsonNode exp : experiences) {
-                    list.add(new ListItem(exp.asText(), normalFont));
-                }
-                document.add(list);
-            }
 
         } catch (Exception e) {
             logger.log(Level.ERROR, "Échec de la génération du CV", e.getMessage());
@@ -152,6 +112,34 @@ public class CreatePDF {
                 document.close();
             }
         }
+    }
+
+    static void addBulletedList(String name, JsonNode cvJson, Document document) {
+        Image icone = addImage("images" + java.io.File.separator + "Puce.png", 8);
+        document.add(new com.lowagie.text.Paragraph(name + " :", subtitleFont));
+        com.fasterxml.jackson.databind.JsonNode competences = cvJson.get(name);
+        if (competences != null && competences.isArray()) {
+            com.lowagie.text.List list = new com.lowagie.text.List();
+            for (int i = 0; i < competences.size(); i++) {
+                com.fasterxml.jackson.databind.JsonNode exp = competences.get(i);
+                String label = exp.asText();
+                com.lowagie.text.Paragraph paragraph = new com.lowagie.text.Paragraph();
+                paragraph.add(new com.lowagie.text.Chunk(icone, 0, 0, true));
+                paragraph.add(new com.lowagie.text.Chunk(" " + label, normalFont));
+                document.add(paragraph);
+            }
+            document.add(list);
+        }
+    }
+
+    static void addIconeFirst(String image, JsonNode cvJson, Document document) {
+        Paragraph paragraph = new Paragraph();
+        Image icone = addImage("images" + java.io.File.separator + image + ".png", FONT_SIZE_NORMAL);
+        if (icone != null) {
+            paragraph.add(new com.lowagie.text.Chunk(icone, 0, 0, true));
+        }
+        paragraph.add(new com.lowagie.text.Chunk(" " + cvJson.get(image).asText(), normalFont));
+        document.add(paragraph);
     }
 
     static Image addImage(String imagePath, float size) {
