@@ -7,6 +7,8 @@ import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
 import com.lowagie.text.Image;
+import com.lowagie.text.List;
+import com.lowagie.text.ListItem;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
 import com.lowagie.text.Rectangle;
@@ -38,70 +40,40 @@ public class CreatePDF {
 
             document.open();
 
+            addHeader(cvJson, document);
+
             //Création d'une table à 2 colonnes
-            // On définit la largeur relative des colonnes (ex: 1/3 pour la photo, 2/3 pour le texte)
-            PdfPTable headerTable = new PdfPTable(2);
-            headerTable.setWidthPercentage(100);
-            headerTable.setWidths(new float[]{1, 2});
+            // On définit la largeur relative des colonnes (ex: 1/4 pour la photo, 3/4 pour le texte)
+            PdfPTable bodyTable = new PdfPTable(2);
+            bodyTable.setWidthPercentage(100);
+            bodyTable.setWidths(new float[]{1, 2});
+            bodyTable.setSpacingAfter(20);
 
-            headerTable.setSpacingAfter(20);
-
-            Image photo = addImage("ma_photo.png", 100);
-
-            PdfPCell photoCell = new PdfPCell(photo);
-            photoCell.setBorder(Rectangle.NO_BORDER);
-            photoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-            headerTable.addCell(photoCell);
-
-            Phrase infoPhrase = new Phrase();
-            infoPhrase.add(new Chunk(cvJson.get("Nom").asText() + "\n", titleFont));
-            infoPhrase.add(new Chunk("\n", emptyLineFont));
-            JsonNode titre = cvJson.get("Titre");
-            if (titre != null && titre.isArray()) {
-                for (int i = 0; i < titre.size(); i++) {
-                    JsonNode exp = titre.get(i);
-                    infoPhrase.add(new Chunk(" " + exp.asText(), subtitleFont));
-                    if (i < titre.size() - 1) {
-                        infoPhrase.add(new Chunk("  / ", subtitleFont));
-                    }
-                }
-            }
-            infoPhrase.add(new Chunk("\n" + Objects.requireNonNull(titre).asText(), subtitleFont));
-            infoPhrase.add(new Chunk("\n", emptyLineFont));
-
-            JsonNode sousTitre = cvJson.get("Sous titre");
-            if (sousTitre != null && sousTitre.isArray()) {
-                for (int i = 0; i < sousTitre.size(); i++) {
-                    JsonNode exp = sousTitre.get(i);
-                    String label = exp.asText();
-                    Image icone = addImage("images" + File.separator + label + ".png", FONT_SIZE_NORMAL);
-                    if (icone != null) {
-                        infoPhrase.add(new Chunk(icone, -2, -2, true));
-                    }
-                    infoPhrase.add(new Chunk(" " + label, subtitleFont));
-                    if (i < sousTitre.size() - 1) {
-                        infoPhrase.add(new Chunk(" /  ", subtitleFont));
-                    }
-                }
-            }
-
-            PdfPCell textCell = new PdfPCell(infoPhrase);
-            textCell.setBorder(Rectangle.NO_BORDER);
-            textCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-            textCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-            textCell.setPaddingLeft(10); // Petit espace entre la photo et le texte
-            headerTable.addCell(textCell);
+            Phrase infoPhraseLeft = new Phrase();
+            infoPhraseLeft.add(addIconeFirst("Téléphone", cvJson));
+            infoPhraseLeft.add(new Chunk("\n", emptyLineFont));
+            infoPhraseLeft.add(addIconeFirst("Email", cvJson));
+            infoPhraseLeft.add(new Chunk("\n", emptyLineFont));
+            infoPhraseLeft.add(addIconeFirst("GitHub", cvJson));
+            infoPhraseLeft.add(new Chunk("\n", emptyLineFont));
+            infoPhraseLeft.add(addIconeFirst("LinkedIn", cvJson));
+            infoPhraseLeft.add(new Chunk("\n", emptyLineFont));
+            infoPhraseLeft.add(addBulletedList("Compétences", cvJson));
+            PdfPCell textCellLeft = new PdfPCell(infoPhraseLeft);
+            textCellLeft.setBorder(Rectangle.NO_BORDER);
+            textCellLeft.setHorizontalAlignment(Element.ALIGN_LEFT);
+            textCellLeft.setPaddingLeft(10); // Petit espace entre la photo et le texte
+            bodyTable.addCell(textCellLeft);
+            Phrase infoPhraseRight = new Phrase();
+            infoPhraseRight.add(addBulletedList("experience", cvJson));
+            PdfPCell textCellRight = new PdfPCell(infoPhraseRight);
+            textCellRight.setBorder(Rectangle.NO_BORDER);
+            textCellRight.setHorizontalAlignment(Element.ALIGN_LEFT);
+            textCellRight.setPaddingLeft(10); // Petit espace entre la photo et le texte
+            bodyTable.addCell(textCellRight);
 
             // Ajouter la table au document
-            document.add(headerTable);
-
-            addIconeFirst("Téléphone", cvJson, document);
-            addIconeFirst("Email", cvJson, document);
-            addIconeFirst("GitHub", cvJson, document);
-            addIconeFirst("LinkedIn", cvJson, document);
-
-            addBulletedList("Compétences", cvJson, document);
-            addBulletedList("experience", cvJson, document);
+            document.add(bodyTable);
 
 
         } catch (Exception e) {
@@ -114,32 +86,95 @@ public class CreatePDF {
         }
     }
 
-    static void addBulletedList(String name, JsonNode cvJson, Document document) {
-        Image icone = addImage("images" + java.io.File.separator + "Puce.png", 8);
-        document.add(new com.lowagie.text.Paragraph(name + " :", subtitleFont));
-        com.fasterxml.jackson.databind.JsonNode competences = cvJson.get(name);
-        if (competences != null && competences.isArray()) {
-            com.lowagie.text.List list = new com.lowagie.text.List();
-            for (int i = 0; i < competences.size(); i++) {
-                com.fasterxml.jackson.databind.JsonNode exp = competences.get(i);
-                String label = exp.asText();
-                com.lowagie.text.Paragraph paragraph = new com.lowagie.text.Paragraph();
-                paragraph.add(new com.lowagie.text.Chunk(icone, 0, 0, true));
-                paragraph.add(new com.lowagie.text.Chunk(" " + label, normalFont));
-                document.add(paragraph);
+    private static void addHeader(JsonNode cvJson, Document document) {
+        //Création d'une table à 2 colonnes
+        // On définit la largeur relative des colonnes (ex: 1/3 pour la photo, 2/3 pour le texte)
+        PdfPTable headerTable = new PdfPTable(2);
+        headerTable.setWidthPercentage(100);
+        headerTable.setWidths(new float[]{1, 2});
+        headerTable.setSpacingAfter(20);
+
+        Image photo = addImage("ma_photo.png", 100);
+
+        PdfPCell photoCell = new PdfPCell(photo);
+        photoCell.setBorder(Rectangle.NO_BORDER);
+        photoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        headerTable.addCell(photoCell);
+
+        Phrase infoPhrase = new Phrase();
+        infoPhrase.add(new Chunk(cvJson.get("Nom").asText() + "\n", titleFont));
+        infoPhrase.add(new Chunk("\n", emptyLineFont));
+        JsonNode titre = cvJson.get("Titre");
+        if (titre != null && titre.isArray()) {
+            for (int i = 0; i < titre.size(); i++) {
+                JsonNode exp = titre.get(i);
+                infoPhrase.add(new Chunk(" " + exp.asText(), subtitleFont));
+                if (i < titre.size() - 1) {
+                    infoPhrase.add(new Chunk("  / ", subtitleFont));
+                }
             }
-            document.add(list);
         }
+        infoPhrase.add(new Chunk("\n" + Objects.requireNonNull(titre).asText(), subtitleFont));
+        infoPhrase.add(new Chunk("\n", emptyLineFont));
+
+        JsonNode sousTitre = cvJson.get("Sous titre");
+        if (sousTitre != null && sousTitre.isArray()) {
+            for (int i = 0; i < sousTitre.size(); i++) {
+                JsonNode exp = sousTitre.get(i);
+                String label = exp.asText();
+                Image icone = addImage("images" + File.separator + label + ".png", FONT_SIZE_NORMAL);
+                if (icone != null) {
+                    infoPhrase.add(new Chunk(icone, -2, -2, true));
+                }
+                infoPhrase.add(new Chunk(" " + label, subtitleFont));
+                if (i < sousTitre.size() - 1) {
+                    infoPhrase.add(new Chunk(" /  ", subtitleFont));
+                }
+            }
+        }
+
+        PdfPCell textCell = new PdfPCell(infoPhrase);
+        textCell.setBorder(Rectangle.NO_BORDER);
+        textCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        textCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        textCell.setPaddingLeft(10); // Petit espace entre la photo et le texte
+        headerTable.addCell(textCell);
+
+        // Ajouter la table au document
+        document.add(headerTable);
     }
 
-    static void addIconeFirst(String image, JsonNode cvJson, Document document) {
-        Paragraph paragraph = new Paragraph();
-        Image icone = addImage("images" + java.io.File.separator + image + ".png", FONT_SIZE_NORMAL);
-        if (icone != null) {
-            paragraph.add(new com.lowagie.text.Chunk(icone, 0, 0, true));
+    static List addBulletedList(String name, JsonNode cvJson) {
+        Image icone = addImage("images" + java.io.File.separator + "Puce.png", 8);
+        List listCompetences = new List(List.UNORDERED);
+        listCompetences.setListSymbol(new Chunk(""));
+        ListItem item = new ListItem();
+        item.add(new Chunk(name + " :", subtitleFont));
+        item.add(new Chunk("\n", emptyLineFont));
+
+        JsonNode competences = cvJson.get(name);
+        if (competences != null && competences.isArray()) {
+            for (int i = 0; i < competences.size(); i++) {
+                JsonNode exp = competences.get(i);
+                String label = exp.asText();
+                Paragraph paragraph = new Paragraph();
+                paragraph.add(new Chunk(icone, 0, 0, true));
+                paragraph.add(new Chunk(" " + label, normalFont));
+                item.add(paragraph);
+            }
         }
-        paragraph.add(new com.lowagie.text.Chunk(" " + cvJson.get(image).asText(), normalFont));
-        document.add(paragraph);
+        listCompetences.add(item);
+        return listCompetences;
+    }
+
+    static Paragraph addIconeFirst(String image, JsonNode cvJson) {
+        Paragraph paragraph = new Paragraph();
+        Image icone = addImage("images" + File.separator + image + ".png", FONT_SIZE_NORMAL);
+        if (icone != null) {
+            paragraph.add(new Chunk(icone, 0, 0, true));
+        }
+        paragraph.add(new Chunk(" " + cvJson.get(image).asText(), normalFont));
+        return paragraph;
     }
 
     static Image addImage(String imagePath, float size) {
