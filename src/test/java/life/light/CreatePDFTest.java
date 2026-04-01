@@ -32,9 +32,9 @@ class CreatePDFTest {
         // GIVEN : Construction d'un JsonNode factice
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode cvJson = mapper.createObjectNode();
-        cvJson.put("nom", "Jean Dupont");
-        cvJson.put("titre", "Développeur Java");
-        cvJson.put("email", "jean.dupont@example.com");
+        cvJson.put("Nom", "Jean Dupont");
+        cvJson.put("Titre", "Développeur Java");
+        cvJson.put("Tmail", "jean.dupont@example.com");
 
         ArrayNode experiences = cvJson.putArray("experience");
         experiences.add("Développeur Senior chez Google");
