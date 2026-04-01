@@ -27,6 +27,7 @@ public class CreatePDF {
     static Font titleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 24, Font.BOLD);
     static Font subtitleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 14, Font.BOLD);
     static Font normalFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL);
+    static Font emptyLineFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 6);
 
     static void creatPDF(JsonNode cvJson) {
         Document document = new Document();
@@ -38,10 +39,11 @@ public class CreatePDF {
             document.open();
 
             //Création d'une table à 2 colonnes
-            // On définit la largeur relative des colonnes (ex: 1/4 pour la photo, 3/4 pour le texte)
+            // On définit la largeur relative des colonnes (ex: 1/3 pour la photo, 2/3 pour le texte)
             PdfPTable headerTable = new PdfPTable(2);
             headerTable.setWidthPercentage(100);
-            headerTable.setWidths(new float[]{1, 3});
+            headerTable.setWidths(new float[]{1, 2});
+
             headerTable.setSpacingAfter(20);
 
             Image photo = addImage("ma_photo.png", 100);
@@ -51,12 +53,9 @@ public class CreatePDF {
             photoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
             headerTable.addCell(photoCell);
 
-            // --- COLONNE DROITE : NOM ET TITRE ---
-
-
             Phrase infoPhrase = new Phrase();
             infoPhrase.add(new Chunk(cvJson.get("Nom").asText() + "\n", titleFont));
-            infoPhrase.add(new Chunk("\n", subtitleFont));
+            infoPhrase.add(new Chunk("\n", emptyLineFont));
             JsonNode titre = cvJson.get("Titre");
             if (titre != null && titre.isArray()) {
                 for (int i = 0; i < titre.size(); i++) {
@@ -67,7 +66,8 @@ public class CreatePDF {
                     }
                 }
             }
-            infoPhrase.add(new Chunk("\n" + Objects.requireNonNull(titre).asText() + "\n", subtitleFont));
+            infoPhrase.add(new Chunk("\n" + Objects.requireNonNull(titre).asText(), subtitleFont));
+            infoPhrase.add(new Chunk("\n", emptyLineFont));
 
             JsonNode sousTitre = cvJson.get("Sous titre");
             if (sousTitre != null && sousTitre.isArray()) {
