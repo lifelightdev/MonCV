@@ -3,8 +3,10 @@ package life.light;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
+import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
+import com.lowagie.text.Image;
 import com.lowagie.text.List;
 import com.lowagie.text.ListItem;
 import com.lowagie.text.Paragraph;
@@ -48,6 +50,9 @@ public class CreatePDF {
                 }
                 document.add(list);
             }
+
+            addPhoto(document);
+
         } catch (Exception e) {
             logger.log(Level.ERROR, "Échec de la génération du CV", e.getMessage());
         } finally {
@@ -55,6 +60,26 @@ public class CreatePDF {
                 // 4. Fermer le document
                 document.close();
             }
+        }
+    }
+
+    static void addPhoto(Document document) {
+        try {
+            // Chemin vers ta photo (tu peux aussi le récupérer depuis ton cvJson)
+            String imagePath = "ma_photo.png";
+            Image photo = Image.getInstance(imagePath);
+
+            // 2. Ajuster la taille (ex: 100x100 pixels)
+            photo.scaleToFit(100, 100);
+
+            // 3. Positionnement (Optionnel : à droite)
+            photo.setAlignment(Element.ALIGN_RIGHT);
+
+            // 4. Ajouter au document
+            document.add(photo);
+
+        } catch (Exception e) {
+            logger.log(Level.ERROR, "Photo non trouvée, génération du CV sans image", e.getMessage());
         }
     }
 }
