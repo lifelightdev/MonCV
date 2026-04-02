@@ -29,16 +29,17 @@ public class CreatePDF {
     public static final int FONT_SIZE_NORMAL = 12;
 
     static Font titleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 24, Font.BOLD);
-    static Font subtitleFontBlod = FontFactory.getFont(FontFactory.TIMES_ROMAN, 14, Font.BOLD);
+    static Font subtitleFontBold = FontFactory.getFont(FontFactory.TIMES_ROMAN, 14, Font.BOLD);
     static Font subtitleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 14);
     static Font normalFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL);
+    static Font normalFontBold = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL, Font.BOLD);
     static Font normalFontUnderline = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL, Font.UNDERLINE);
     static Font emptyLineFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 6);
-    static Image icone = addImage("images" + java.io.File.separator + "Puce.png", 8);
+    static Image icone = addImage("images" + java.io.File.separator + "Puce1.png", 8);
 
     static void creatPDF(JsonNode cvJson) {
         // Les valeurs sont en "points" (72 points = 1 pouce = 2,54 cm)
-        // Ici, on met environ 1 cm de marge partout (28 points)
+        // Ici, on met environ 1 cm de marge partout (28 points).
         float margeGauche = 28f;
         float margeDroite = 28f;
         float margeHaut = 20f;
@@ -46,42 +47,17 @@ public class CreatePDF {
         Document document = new Document(PageSize.A4, margeGauche, margeDroite, margeHaut, margeBas);
 
         try {
-            String nameFileCVPDF = "Mon_CV.pdf";
-            PdfWriter.getInstance(document, new FileOutputStream(nameFileCVPDF));
+            String nameFileCVPDF = "PRUT Christelle - CV.pdf";
+            PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(nameFileCVPDF));
+
+            // On attache l'image de fond
+            BackgroundEvent event = new BackgroundEvent("images/Fond.png");
+            writer.setPageEvent(event);
 
             document.open();
-
             addHeader(cvJson, document);
-
             addSubHeader(cvJson, document);
-
-            //Création d'une table à 2 colonnes
-            PdfPTable bodyTable = getPdfPTable();
-
-            Paragraph infoPhraseLeft = new Paragraph();
-            infoPhraseLeft.add(addBulletedList("Compétences", cvJson));
-            infoPhraseLeft.add(addLangues(cvJson));
-            infoPhraseLeft.add(addFormations(cvJson));
-            infoPhraseLeft.setLeading(0, 1.2f);
-            PdfPCell textCellLeft = new PdfPCell(infoPhraseLeft);
-            textCellLeft.setBorder(Rectangle.NO_BORDER);
-            //textCellLeft.setHorizontalAlignment(Element.ALIGN_JUSTIFIED);
-            textCellLeft.setVerticalAlignment(Element.ALIGN_TOP);
-            textCellLeft.setLeading(0, 1.2f);
-            textCellLeft.setPaddingRight(15f);
-            bodyTable.addCell(textCellLeft);
-
-            Phrase infoPhraseRight = new Phrase();
-            infoPhraseRight.add(addExperiences(cvJson));
-            PdfPCell textCellRight = new PdfPCell(infoPhraseRight);
-            textCellRight.setBorder(Rectangle.NO_BORDER);
-            textCellRight.setHorizontalAlignment(Element.ALIGN_JUSTIFIED);
-            textCellRight.setVerticalAlignment(Element.ALIGN_TOP);
-            textCellRight.setLeading(0, 1.2f);
-            bodyTable.addCell(textCellRight);
-
-            // Ajouter la table au document
-            document.add(bodyTable);
+            addBody(cvJson, document);
         } catch (Exception e) {
             logger.log(Level.ERROR, "Échec de la génération du CV", e.getMessage());
         } finally {
@@ -92,8 +68,37 @@ public class CreatePDF {
         }
     }
 
+    private static void addBody(JsonNode cvJson, Document document) {
+        //Création d'une table à 2 colonnes
+        PdfPTable bodyTable = getPdfPTable();
+
+        Paragraph infoPhraseLeft = new Paragraph();
+        infoPhraseLeft.add(addBulletedList("Compétences", cvJson));
+        infoPhraseLeft.add(addLangues(cvJson));
+        infoPhraseLeft.add(addFormations(cvJson));
+        infoPhraseLeft.setLeading(0, 1.2f);
+        PdfPCell textCellLeft = new PdfPCell(infoPhraseLeft);
+        textCellLeft.setBorder(Rectangle.NO_BORDER);
+        textCellLeft.setVerticalAlignment(Element.ALIGN_TOP);
+        textCellLeft.setLeading(0, 1.2f);
+        textCellLeft.setPaddingRight(15f);
+        bodyTable.addCell(textCellLeft);
+
+        Phrase infoPhraseRight = new Phrase();
+        infoPhraseRight.add(addExperiences(cvJson));
+        PdfPCell textCellRight = new PdfPCell(infoPhraseRight);
+        textCellRight.setBorder(Rectangle.NO_BORDER);
+        textCellRight.setHorizontalAlignment(Element.ALIGN_JUSTIFIED);
+        textCellRight.setVerticalAlignment(Element.ALIGN_TOP);
+        textCellRight.setLeading(0, 1.2f);
+        bodyTable.addCell(textCellRight);
+
+        // Ajouter la table au document
+        document.add(bodyTable);
+    }
+
     private static PdfPTable getPdfPTable() {
-        // On définit la largeur relative des colonnes (ex: 1/3 pour la photo, 2/3 pour le texte)
+        // On définit la largeur relative des colonnes (ex : 1/3 pour la photo, 2/3 pour le texte).
         PdfPTable bodyTable = new PdfPTable(2);
         bodyTable.setWidthPercentage(100);
         bodyTable.setWidths(new float[]{1, 2});
@@ -103,7 +108,7 @@ public class CreatePDF {
     private static void addHeader(JsonNode cvJson, Document document) {
         PdfPTable headerTable = getPdfPTable();
 
-        Image photo = addImage("ma_photo.png", 70);
+        Image photo = addImage("Christelle.jpg", 70);
 
         PdfPCell photoCell = new PdfPCell(photo);
         photoCell.setBorder(Rectangle.NO_BORDER);
@@ -117,13 +122,13 @@ public class CreatePDF {
         if (titre != null && titre.isArray()) {
             for (int i = 0; i < titre.size(); i++) {
                 JsonNode exp = titre.get(i);
-                infoPhrase.add(new Chunk(" " + exp.asText(), subtitleFontBlod));
+                infoPhrase.add(new Chunk(" " + exp.asText(), subtitleFontBold));
                 if (i < titre.size() - 1) {
-                    infoPhrase.add(new Chunk("  / ", subtitleFontBlod));
+                    infoPhrase.add(new Chunk("  / ", subtitleFontBold));
                 }
             }
         }
-        infoPhrase.add(new Chunk("\n" + Objects.requireNonNull(titre).asText(), subtitleFontBlod));
+        infoPhrase.add(new Chunk("\n" + Objects.requireNonNull(titre).asText(), subtitleFontBold));
         JsonNode sousTitre = cvJson.get("Sous titre");
         if (sousTitre != null && sousTitre.isArray()) {
             for (int i = 0; i < sousTitre.size(); i++) {
@@ -133,9 +138,9 @@ public class CreatePDF {
                 if (icone != null) {
                     infoPhrase.add(new Chunk(icone, -2, -2, true));
                 }
-                infoPhrase.add(new Chunk(" " + label, subtitleFontBlod));
+                infoPhrase.add(new Chunk(" " + label, subtitleFontBold));
                 if (i < sousTitre.size() - 1) {
-                    infoPhrase.add(new Chunk(" /  ", subtitleFontBlod));
+                    infoPhrase.add(new Chunk(" /  ", subtitleFontBold));
                 }
             }
         }
@@ -153,7 +158,7 @@ public class CreatePDF {
 
     private static void addSubHeader(JsonNode cvJson, Document document) {
         //Création d'une table à 2 colonnes
-        // On définit la largeur relative des colonnes (ex: 1/3 pour la photo, 2/3 pour le texte)
+        // On définit la largeur relative des colonnes (ex : 1/3 pour la photo, 2/3 pour le texte)
         com.lowagie.text.pdf.PdfPTable subHeaderTable = getPdfPTable();
 
         Phrase infoPhraseLeft = new Phrase();
@@ -188,16 +193,25 @@ public class CreatePDF {
         List listCompetences = new List(List.UNORDERED);
         listCompetences.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
-        item.add(new Chunk(name.toUpperCase() + " ", subtitleFontBlod));
+        item.add(new Chunk(name.toUpperCase() + " ", subtitleFontBold));
         item.add(new Chunk("\n \n ", emptyLineFont));
         JsonNode competences = cvJson.get(name);
         if (competences != null && competences.isArray()) {
             for (int i = 0; i < competences.size(); i++) {
-                JsonNode exp = competences.get(i);
-                String label = exp.asText();
+                JsonNode competence = competences.get(i);
                 Paragraph paragraph = new Paragraph();
                 paragraph.add(new Chunk(icone, 0, 0, true));
-                paragraph.add(new Chunk(" " + label, normalFont));
+                for (int j = 0; j < competence.size(); j++) {
+                    JsonNode exp = competence.get(j);
+                    Font font = normalFont;
+                    if (exp.get("EnGras").asBoolean()) {
+                        font = normalFontBold;
+                    }
+                    paragraph.add(new Chunk(" " + exp.get("Description").asText(), font));
+                    if (j < competence.size() - 1) {
+                        paragraph.add(new Chunk(",", font));
+                    }
+                }
                 item.add(paragraph);
                 item.add(new Chunk("\n ", emptyLineFont));
             }
@@ -210,7 +224,7 @@ public class CreatePDF {
         List listFormations = new List(List.UNORDERED);
         listFormations.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
-        item.add(new Chunk("Formations".toUpperCase(), subtitleFontBlod));
+        item.add(new Chunk("Formations".toUpperCase(), subtitleFontBold));
         item.add(new Chunk("\n \n ", emptyLineFont));
         JsonNode competences = cvJson.get("Formations");
         if (competences != null && competences.isArray()) {
@@ -233,7 +247,7 @@ public class CreatePDF {
         List listLangues = new List(List.UNORDERED);
         listLangues.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
-        item.add(new Chunk("Langues".toUpperCase(), subtitleFontBlod));
+        item.add(new Chunk("Langues".toUpperCase(), subtitleFontBold));
         item.add(new Chunk("\n \n ", emptyLineFont));
         JsonNode langues = cvJson.get("Langues");
         if (langues != null && langues.isArray()) {
@@ -255,7 +269,7 @@ public class CreatePDF {
         List listExperiences = new List(List.UNORDERED);
         listExperiences.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
-        item.add(new Chunk("Experiences".toUpperCase(), subtitleFontBlod));
+        item.add(new Chunk("Experiences".toUpperCase(), subtitleFontBold));
         item.add(new Chunk("\n ", emptyLineFont));
         JsonNode experiences = cvJson.get("Experiences");
         if (experiences != null && experiences.isArray()) {
@@ -283,7 +297,7 @@ public class CreatePDF {
                             paragraphFonction.add(new Chunk(" - " + fonction.get("Sous titre").asText(), normalFont));
                         }
                         itemFonctions.add(paragraphFonction);
-                        itemFonctions.add(new Chunk("\n ", emptyLineFont));
+                        itemFonctions.add(new Chunk("\n", emptyLineFont));
 
                         List listTaches = new List(List.UNORDERED);
                         listTaches.setListSymbol(new Chunk(""));
@@ -293,7 +307,11 @@ public class CreatePDF {
                             for (int k = 0; k < taches.size(); k++) {
                                 JsonNode tache = taches.get(k);
                                 Paragraph paragraphTache = new Paragraph();
-                                paragraphTache.add(new Chunk("    - " + tache.asText(), normalFont));
+                                Font font = normalFont;
+                                if (tache.get("EnGras").asBoolean()) {
+                                    font = normalFontBold;
+                                }
+                                paragraphTache.add(new Chunk("    - " + tache.get("Description").asText(), font));
                                 itemTaches.add(paragraphTache);
                             }
                         }
