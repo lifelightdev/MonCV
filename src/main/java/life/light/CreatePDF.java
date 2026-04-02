@@ -29,8 +29,8 @@ public class CreatePDF {
     public static final int FONT_SIZE_NORMAL = 12;
 
     static Font titleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 24, Font.BOLD);
-    static Font subtitleFontBlod = FontFactory.getFont(FontFactory.TIMES_ROMAN, 18, Font.BOLD);
-    static Font subtitleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 13);
+    static Font subtitleFontBlod = FontFactory.getFont(FontFactory.TIMES_ROMAN, 14, Font.BOLD);
+    static Font subtitleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 14);
     static Font normalFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL);
     static Font normalFontUnderline = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL, Font.UNDERLINE);
     static Font emptyLineFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 6);
@@ -55,12 +55,8 @@ public class CreatePDF {
 
             addSubHeader(cvJson, document);
 
-            //Création d'une table à 3 colonnes
-            // On définit la largeur relative des colonnes (ex: 1/3 pour la photo, 2/3 pour le texte)
-            PdfPTable bodyTable = new PdfPTable(2);
-            bodyTable.setWidthPercentage(100);
-            bodyTable.setWidths(new float[]{1, 2});
-
+            //Création d'une table à 2 colonnes
+            PdfPTable bodyTable = getPdfPTable();
 
             Paragraph infoPhraseLeft = new Paragraph();
             infoPhraseLeft.add(addBulletedList("Compétences", cvJson));
@@ -96,12 +92,16 @@ public class CreatePDF {
         }
     }
 
-    private static void addHeader(JsonNode cvJson, Document document) {
-        //Création d'une table à 2 colonnes
+    private static PdfPTable getPdfPTable() {
         // On définit la largeur relative des colonnes (ex: 1/3 pour la photo, 2/3 pour le texte)
-        PdfPTable headerTable = new PdfPTable(2);
-        headerTable.setWidthPercentage(100);
-        headerTable.setWidths(new float[]{1, 2});
+        PdfPTable bodyTable = new PdfPTable(2);
+        bodyTable.setWidthPercentage(100);
+        bodyTable.setWidths(new float[]{1, 2});
+        return bodyTable;
+    }
+
+    private static void addHeader(JsonNode cvJson, Document document) {
+        PdfPTable headerTable = getPdfPTable();
 
         Image photo = addImage("ma_photo.png", 70);
 
@@ -154,9 +154,7 @@ public class CreatePDF {
     private static void addSubHeader(JsonNode cvJson, Document document) {
         //Création d'une table à 2 colonnes
         // On définit la largeur relative des colonnes (ex: 1/3 pour la photo, 2/3 pour le texte)
-        PdfPTable subHeaderTable = new PdfPTable(2);
-        subHeaderTable.setWidthPercentage(100);
-        subHeaderTable.setWidths(new float[]{1, 2});
+        com.lowagie.text.pdf.PdfPTable subHeaderTable = getPdfPTable();
 
         Phrase infoPhraseLeft = new Phrase();
         infoPhraseLeft.add(addIconeFirst("Téléphone", cvJson));
@@ -190,7 +188,7 @@ public class CreatePDF {
         List listCompetences = new List(List.UNORDERED);
         listCompetences.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
-        item.add(new Chunk(name + " ", subtitleFontBlod));
+        item.add(new Chunk(name.toUpperCase() + " ", subtitleFontBlod));
         item.add(new Chunk("\n \n ", emptyLineFont));
         JsonNode competences = cvJson.get(name);
         if (competences != null && competences.isArray()) {
@@ -212,7 +210,7 @@ public class CreatePDF {
         List listFormations = new List(List.UNORDERED);
         listFormations.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
-        item.add(new Chunk("Formations", subtitleFontBlod));
+        item.add(new Chunk("Formations".toUpperCase(), subtitleFontBlod));
         item.add(new Chunk("\n \n ", emptyLineFont));
         JsonNode competences = cvJson.get("Formations");
         if (competences != null && competences.isArray()) {
@@ -235,7 +233,7 @@ public class CreatePDF {
         List listLangues = new List(List.UNORDERED);
         listLangues.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
-        item.add(new Chunk("Langues", subtitleFontBlod));
+        item.add(new Chunk("Langues".toUpperCase(), subtitleFontBlod));
         item.add(new Chunk("\n \n ", emptyLineFont));
         JsonNode langues = cvJson.get("Langues");
         if (langues != null && langues.isArray()) {
@@ -257,7 +255,7 @@ public class CreatePDF {
         List listExperiences = new List(List.UNORDERED);
         listExperiences.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
-        item.add(new Chunk("Experiences", subtitleFontBlod));
+        item.add(new Chunk("Experiences".toUpperCase(), subtitleFontBlod));
         item.add(new Chunk("\n ", emptyLineFont));
         JsonNode experiences = cvJson.get("Experiences");
         if (experiences != null && experiences.isArray()) {
