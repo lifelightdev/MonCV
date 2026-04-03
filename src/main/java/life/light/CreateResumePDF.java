@@ -23,9 +23,9 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.Objects;
 
-public class CreateCVPDF {
+public class CreateResumePDF {
 
-    private static final Logger logger = System.getLogger(CreateCVPDF.class.getName());
+    private static final Logger logger = System.getLogger(CreateResumePDF.class.getName());
     public static final int FONT_SIZE_NORMAL = 12;
 
     static Font titleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 24, Font.BOLD);
@@ -37,17 +37,18 @@ public class CreateCVPDF {
     static Font emptyLineFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 6);
     static Image icone = addImage("images" + java.io.File.separator + "Puce1.png", 8);
 
-    static void creatPDF(JsonNode cvJson) {
+    static void createResume(JsonNode resumeJson) {
         // Les valeurs sont en "points" (72 points = 1 pouce = 2,54 cm)
         // Ici, on met environ 1 cm de marge partout (28 points).
         float margeGauche = 28f;
         float margeDroite = 28f;
         float margeHaut = 20f;
         float margeBas = 20f;
+
         Document document = new Document(PageSize.A4, margeGauche, margeDroite, margeHaut, margeBas);
 
         try {
-            String nameFileCVPDF = cvJson.get("Nom").asText() + " " + cvJson.get("Prénom").asText() + " - CV.pdf";
+            String nameFileCVPDF = resumeJson.get("Nom").asText() + " " + resumeJson.get("Prénom").asText() + " - CV.pdf";
             PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(nameFileCVPDF));
 
             // On attache l'image de fond
@@ -55,9 +56,9 @@ public class CreateCVPDF {
             writer.setPageEvent(event);
 
             document.open();
-            addHeader(cvJson, document);
-            addSubHeader(cvJson, document);
-            addBody(cvJson, document);
+            addHeader(resumeJson, document);
+            addSubHeader(resumeJson, document);
+            addBody(resumeJson, document);
         } catch (Exception e) {
             logger.log(Level.ERROR, "Échec de la génération du CV", e.getMessage());
         } finally {
@@ -68,24 +69,22 @@ public class CreateCVPDF {
         }
     }
 
-    private static void addBody(JsonNode cvJson, Document document) {
+    private static void addBody(JsonNode resumeJson, Document document) {
         //Création d'une table à 2 colonnes
         PdfPTable bodyTable = getPdfPTable();
 
         Paragraph infoPhraseLeft = new Paragraph();
-        infoPhraseLeft.add(addCompetences(cvJson));
-        infoPhraseLeft.add(addLangues(cvJson));
-        infoPhraseLeft.add(addFormations(cvJson));
-        infoPhraseLeft.setLeading(0, 1.2f);
+        infoPhraseLeft.add(addCompetences(resumeJson));
+        infoPhraseLeft.add(addLangues(resumeJson));
+        infoPhraseLeft.add(addFormations(resumeJson));
         PdfPCell textCellLeft = new PdfPCell(infoPhraseLeft);
         textCellLeft.setBorder(Rectangle.NO_BORDER);
         textCellLeft.setVerticalAlignment(Element.ALIGN_TOP);
         textCellLeft.setLeading(0, 1.2f);
-        textCellLeft.setPaddingRight(15f);
         bodyTable.addCell(textCellLeft);
 
         Phrase infoPhraseRight = new Phrase();
-        infoPhraseRight.add(addExperiences(cvJson));
+        infoPhraseRight.add(addExperiences(resumeJson));
         PdfPCell textCellRight = new PdfPCell(infoPhraseRight);
         textCellRight.setBorder(Rectangle.NO_BORDER);
         textCellRight.setHorizontalAlignment(Element.ALIGN_JUSTIFIED);
@@ -105,7 +104,7 @@ public class CreateCVPDF {
         return bodyTable;
     }
 
-    private static void addHeader(JsonNode cvJson, Document document) {
+    private static void addHeader(JsonNode resumeJson, Document document) {
         PdfPTable headerTable = getPdfPTable();
 
         Image photo = addImage("Christelle.jpg", 70);
@@ -117,8 +116,8 @@ public class CreateCVPDF {
         headerTable.addCell(photoCell);
 
         Phrase infoPhrase = new Phrase();
-        infoPhrase.add(new Chunk(cvJson.get("Prénom").asText() + " " + cvJson.get("Nom").asText() + "\n ", titleFont));
-        JsonNode titre = cvJson.get("Titre");
+        infoPhrase.add(new Chunk(resumeJson.get("Prénom").asText() + " " + resumeJson.get("Nom").asText() + "\n ", titleFont));
+        JsonNode titre = resumeJson.get("Titre");
         if (titre != null && titre.isArray()) {
             for (int i = 0; i < titre.size(); i++) {
                 JsonNode exp = titre.get(i);
@@ -129,7 +128,7 @@ public class CreateCVPDF {
             }
         }
         infoPhrase.add(new Chunk("\n" + Objects.requireNonNull(titre).asText(), subtitleFontBold));
-        JsonNode sousTitre = cvJson.get("Sous titre");
+        JsonNode sousTitre = resumeJson.get("Sous titre");
         if (sousTitre != null && sousTitre.isArray()) {
             for (int i = 0; i < sousTitre.size(); i++) {
                 JsonNode exp = sousTitre.get(i);
@@ -156,19 +155,19 @@ public class CreateCVPDF {
         document.add(headerTable);
     }
 
-    private static void addSubHeader(JsonNode cvJson, Document document) {
+    private static void addSubHeader(JsonNode resumeJson, Document document) {
         //Création d'une table à 2 colonnes
         // On définit la largeur relative des colonnes (ex : 1/3 pour la photo, 2/3 pour le texte)
         com.lowagie.text.pdf.PdfPTable subHeaderTable = getPdfPTable();
 
         Phrase infoPhraseLeft = new Phrase();
-        infoPhraseLeft.add(addIconeFirst("Téléphone", cvJson));
+        infoPhraseLeft.add(addIconeFirst("Téléphone", resumeJson));
         infoPhraseLeft.add(new Chunk("\n ", emptyLineFont));
-        infoPhraseLeft.add(addIconeFirst("Email", cvJson));
+        infoPhraseLeft.add(addIconeFirst("Email", resumeJson));
         infoPhraseLeft.add(new Chunk("\n ", emptyLineFont));
-        infoPhraseLeft.add(addIconeFirst("GitHub", cvJson));
+        infoPhraseLeft.add(addIconeFirst("GitHub", resumeJson));
         infoPhraseLeft.add(new Chunk("\n ", emptyLineFont));
-        infoPhraseLeft.add(addIconeFirst("LinkedIn", cvJson));
+        infoPhraseLeft.add(addIconeFirst("LinkedIn", resumeJson));
         infoPhraseLeft.add(new Chunk("\n ", emptyLineFont));
         PdfPCell textCellLeft = new PdfPCell(infoPhraseLeft);
         textCellLeft.setBorder(Rectangle.NO_BORDER);
@@ -177,7 +176,7 @@ public class CreateCVPDF {
         textCellLeft.setLeading(0, 1.5f);
         subHeaderTable.addCell(textCellLeft);
 
-        Paragraph paragraph = new Paragraph(cvJson.get("Présentation").asText(), subtitleFont);
+        Paragraph paragraph = new Paragraph(resumeJson.get("Présentation").asText(), subtitleFont);
         PdfPCell textCellRight = new PdfPCell(paragraph);
         textCellRight.setBorder(Rectangle.NO_BORDER);
         textCellRight.setHorizontalAlignment(Element.ALIGN_JUSTIFIED);
@@ -220,13 +219,13 @@ public class CreateCVPDF {
         return listCompetences;
     }
 
-    static List addFormations(JsonNode cvJson) {
+    static List addFormations(JsonNode resumeJson) {
         List listFormations = new List(List.UNORDERED);
         listFormations.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
         item.add(new Chunk("Formations".toUpperCase(), subtitleFontBold));
         item.add(new Chunk("\n \n ", emptyLineFont));
-        JsonNode competences = cvJson.get("Formations");
+        JsonNode competences = resumeJson.get("Formations");
         if (competences != null && competences.isArray()) {
             for (int i = 0; i < competences.size(); i++) {
                 JsonNode formation = competences.get(i);
@@ -243,13 +242,13 @@ public class CreateCVPDF {
         return listFormations;
     }
 
-    static List addLangues(JsonNode cvJson) {
+    static List addLangues(JsonNode resumeJson) {
         List listLangues = new List(List.UNORDERED);
         listLangues.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
         item.add(new Chunk("Langues".toUpperCase(), subtitleFontBold));
         item.add(new Chunk("\n \n ", emptyLineFont));
-        JsonNode langues = cvJson.get("Langues");
+        JsonNode langues = resumeJson.get("Langues");
         if (langues != null && langues.isArray()) {
             for (int i = 0; i < langues.size(); i++) {
                 JsonNode langue = langues.get(i);
@@ -265,13 +264,13 @@ public class CreateCVPDF {
         return listLangues;
     }
 
-    static List addExperiences(JsonNode cvJson) {
+    static List addExperiences(JsonNode resumeJson) {
         List listExperiences = new List(List.UNORDERED);
         listExperiences.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
         item.add(new Chunk("Expériences".toUpperCase(), subtitleFontBold));
         item.add(new Chunk("\n ", emptyLineFont));
-        JsonNode experiences = cvJson.get("Experiences");
+        JsonNode experiences = resumeJson.get("Experiences");
         if (experiences != null && experiences.isArray()) {
             for (int i = 0; i < experiences.size(); i++) {
                 JsonNode experience = experiences.get(i);
@@ -327,13 +326,13 @@ public class CreateCVPDF {
         return listExperiences;
     }
 
-    static Paragraph addIconeFirst(String image, JsonNode cvJson) {
+    static Paragraph addIconeFirst(String image, JsonNode resumeJson) {
         Paragraph paragraph = new Paragraph();
         Image icone = addImage("images" + File.separator + image + ".png", FONT_SIZE_NORMAL);
         if (icone != null) {
             paragraph.add(new Chunk(icone, 0, 0, true));
         }
-        paragraph.add(new Chunk(" " + cvJson.get(image).asText(), normalFont));
+        paragraph.add(new Chunk(" " + resumeJson.get(image).asText(), normalFont));
         return paragraph;
     }
 
