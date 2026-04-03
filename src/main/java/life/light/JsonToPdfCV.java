@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 
-import static life.light.CreatePDF.creatPDF;
+import static life.light.CreateCVPDF.creatPDF;
 
 public class JsonToPdfCV {
 

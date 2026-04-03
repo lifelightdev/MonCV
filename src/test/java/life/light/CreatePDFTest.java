@@ -41,7 +41,7 @@ class CreatePDFTest {
         experiences.add("Stagiaire chez Oracle");
 
         // WHEN : Appel de la méthode
-        CreatePDF.creatPDF(cvJson);
+        CreateCVPDF.creatPDF(cvJson);
 
         // THEN : Vérifications
         File pdfFile = new File(PDF_NAME);
@@ -59,7 +59,7 @@ class CreatePDFTest {
         File testImage = new File("ma_photo_test.png"); // Le code cherche ce nom précis
         BufferedImage bufferedImage = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB);
         ImageIO.write(bufferedImage, "png", testImage);
-        assertDoesNotThrow(() -> CreatePDF.addImage("ma_photo_test.png", 100));
+        assertDoesNotThrow(() -> CreateCVPDF.addImage("ma_photo_test.png", 100));
         // CLEANUP : Supprimer l'image créée pour le test
         if (testImage.exists()) {
             testImage.delete();

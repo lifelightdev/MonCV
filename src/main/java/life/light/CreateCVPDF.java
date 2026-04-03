@@ -23,9 +23,9 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.Objects;
 
-public class CreatePDF {
+public class CreateCVPDF {
 
-    private static final Logger logger = System.getLogger(CreatePDF.class.getName());
+    private static final Logger logger = System.getLogger(CreateCVPDF.class.getName());
     public static final int FONT_SIZE_NORMAL = 12;
 
     static Font titleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 24, Font.BOLD);
@@ -47,7 +47,7 @@ public class CreatePDF {
         Document document = new Document(PageSize.A4, margeGauche, margeDroite, margeHaut, margeBas);
 
         try {
-            String nameFileCVPDF = "PRUT Christelle - CV.pdf";
+            String nameFileCVPDF = cvJson.get("Nom").asText() + " " + cvJson.get("Prénom").asText() + " - CV.pdf";
             PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(nameFileCVPDF));
 
             // On attache l'image de fond
@@ -73,7 +73,7 @@ public class CreatePDF {
         PdfPTable bodyTable = getPdfPTable();
 
         Paragraph infoPhraseLeft = new Paragraph();
-        infoPhraseLeft.add(addBulletedList("Compétences", cvJson));
+        infoPhraseLeft.add(addCompetences(cvJson));
         infoPhraseLeft.add(addLangues(cvJson));
         infoPhraseLeft.add(addFormations(cvJson));
         infoPhraseLeft.setLeading(0, 1.2f);
@@ -117,7 +117,7 @@ public class CreatePDF {
         headerTable.addCell(photoCell);
 
         Phrase infoPhrase = new Phrase();
-        infoPhrase.add(new Chunk(cvJson.get("Nom").asText() + "\n ", titleFont));
+        infoPhrase.add(new Chunk(cvJson.get("Prénom").asText() + " " + cvJson.get("Nom").asText() + "\n ", titleFont));
         JsonNode titre = cvJson.get("Titre");
         if (titre != null && titre.isArray()) {
             for (int i = 0; i < titre.size(); i++) {
@@ -189,13 +189,13 @@ public class CreatePDF {
 
     }
 
-    static List addBulletedList(String name, JsonNode cvJson) {
+    static List addCompetences(JsonNode cvJson) {
         List listCompetences = new List(List.UNORDERED);
         listCompetences.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
-        item.add(new Chunk(name.toUpperCase() + " ", subtitleFontBold));
+        item.add(new Chunk("Compétences".toUpperCase() + " ", subtitleFontBold));
         item.add(new Chunk("\n \n ", emptyLineFont));
-        JsonNode competences = cvJson.get(name);
+        JsonNode competences = cvJson.get("Compétences");
         if (competences != null && competences.isArray()) {
             for (int i = 0; i < competences.size(); i++) {
                 JsonNode competence = competences.get(i);
@@ -269,7 +269,7 @@ public class CreatePDF {
         List listExperiences = new List(List.UNORDERED);
         listExperiences.setListSymbol(new Chunk(""));
         ListItem item = new ListItem();
-        item.add(new Chunk("Experiences".toUpperCase(), subtitleFontBold));
+        item.add(new Chunk("Expériences".toUpperCase(), subtitleFontBold));
         item.add(new Chunk("\n ", emptyLineFont));
         JsonNode experiences = cvJson.get("Experiences");
         if (experiences != null && experiences.isArray()) {
