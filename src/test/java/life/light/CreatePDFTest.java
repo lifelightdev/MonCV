@@ -13,6 +13,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -32,7 +33,9 @@ class CreatePDFTest {
         ImageIO.write(bufferedImage, "png", testImage);
         assertDoesNotThrow(() -> CreateResumePDF.addImage("ma_photo_test.png", 100));
         // CLEANUP : supprimer l'image créée pour le test
-        if (testImage.exists()) testImage.delete();
+        if (testImage.exists()) {
+            Files.delete(testImage.toPath());
+        }
     }
 
     @Test
@@ -50,7 +53,9 @@ class CreatePDFTest {
         File generatedFile = new File("TEST Test - CV.pdf");
         // On ne peut pas facilement vérifier le contenu du PDF ici sans PDFBox, mais on vérifie qu'il existe
         // Note : Le code génère le fichier dans le répertoire courant.
-        if (generatedFile.exists()) generatedFile.delete();
+        if (generatedFile.exists()) {
+            Files.delete(generatedFile.toPath());
+        }
     }
 
     @Test
@@ -79,7 +84,7 @@ class CreatePDFTest {
         try {
             CreateResumePDF.addImage("non_existent.png", 10);
         } catch (Exception e) {
-            assertNotNull(e);
+            assertNotNull(e.getMessage());
         }
     }
 }
