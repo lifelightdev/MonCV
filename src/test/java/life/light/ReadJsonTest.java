@@ -50,11 +50,11 @@ class ReadJsonTest {
     }
 
     @Test
-    void validateJson_ShouldThrowIOException_WhenJsonIsInvalid() throws IOException {
-        String jsonContent = "{\"Nom\": 123}"; // Should be string
-        String schemaContent = "{\"$schema\": \"http://json-schema.org/draft-07/schema#\", \"type\": \"object\", \"properties\": {\"Nom\": {\"type\": \"string\"}}}";
+    void validateJson_ShouldThrowIOException_WhenRequiredFieldIsMissing() throws IOException {
+        String jsonContent = "{\"Autre\": \"Test\"}";
+        String schemaContent = "{\"type\": \"object\", \"required\": [\"Nom\"]}";
 
-        Path jsonPath = tempDir.resolve("invalid.json");
+        Path jsonPath = tempDir.resolve("missing_field.json");
         Path schemaPath = tempDir.resolve("schema.json");
 
         Files.writeString(jsonPath, jsonContent);
@@ -62,7 +62,23 @@ class ReadJsonTest {
 
         JsonNode node = ReadJson.getCvJson(jsonPath.toString());
         IOException exception = Assertions.assertThrows(IOException.class, () -> ReadJson.validateJson(node, schemaPath.toString()));
-        assertTrue(exception.getMessage().contains("Erreur de validation JSON"));
+        assertTrue(exception.getMessage().contains("est obligatoire"), "Le message d'erreur devrait indiquer que le champ est obligatoire. Message actuel : " + exception.getMessage());
+    }
+
+    @Test
+    void validateJson_ShouldThrowIOException_WhenNestedRequiredFieldIsMissing() throws IOException {
+        String jsonContent = "{\"Info\": {\"Age\": 30}}";
+        String schemaContent = "{\"type\": \"object\", \"properties\": {\"Info\": {\"type\": \"object\", \"required\": [\"Nom\"]}}}";
+
+        Path jsonPath = tempDir.resolve("nested_missing.json");
+        Path schemaPath = tempDir.resolve("schema_nested.json");
+
+        Files.writeString(jsonPath, jsonContent);
+        Files.writeString(schemaPath, schemaContent);
+
+        JsonNode node = ReadJson.getCvJson(jsonPath.toString());
+        IOException exception = Assertions.assertThrows(IOException.class, () -> ReadJson.validateJson(node, schemaPath.toString()));
+        assertTrue(exception.getMessage().contains("Info.Nom"), "Le message d'erreur devrait contenir le chemin complet 'Info.Nom'. Message actuel : " + exception.getMessage());
     }
 
     @Test

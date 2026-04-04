@@ -29,8 +29,8 @@ class JsonToPdfResumeAndSkillsTest {
         byte[] originalContent = Files.readAllBytes(cvFile.toPath());
 
         try {
-            // Rendre le JSON invalide par rapport au schéma (ex : type incorrect pour Nom)
-            String invalidJson = new String(originalContent).replace("\"Nom\": \"Test\"", "\"Nom\": 123");
+            // Rendre le JSON invalide par rapport au schéma (ex : champ obligatoire manquant)
+            String invalidJson = new String(originalContent).replace("\"Nom\": \"Test\"", "\"Autre\": \"test\"");
             Files.writeString(cvFile.toPath(), invalidJson);
 
             JsonToPdfResumeAndSkills.main();
