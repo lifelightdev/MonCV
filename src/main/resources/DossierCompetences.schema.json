@@ -1,0 +1,285 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Dossier de Compétences Schema",
+  "description": "Schéma pour le fichier de dossier de compétences",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "Nom": {
+      "type": "string"
+    },
+    "Prénom": {
+      "type": "string"
+    },
+    "Début d'expérience": {
+      "type": "object",
+      "properties": {
+        "Année": {
+          "type": "integer"
+        },
+        "Mois": {
+          "type": "integer"
+        },
+        "Jour": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "Année",
+        "Mois",
+        "Jour"
+      ]
+    },
+    "Poste": {
+      "type": "string"
+    },
+    "Début Java": {
+      "type": "object",
+      "properties": {
+        "Année": {
+          "type": "integer"
+        },
+        "Mois": {
+          "type": "integer"
+        },
+        "Jour": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "Année",
+        "Mois",
+        "Jour"
+      ]
+    },
+    "Début Angular": {
+      "type": "object",
+      "properties": {
+        "Année": {
+          "type": "integer"
+        },
+        "Mois": {
+          "type": "integer"
+        },
+        "Jour": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "Année",
+        "Mois",
+        "Jour"
+      ]
+    },
+    "Disponibilité": {
+      "type": "string"
+    },
+    "Techniques": {
+      "$ref": "#/definitions/TechniquesType"
+    },
+    "Postes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "Fonctionnel": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "Employeur": {
+      "type": "object",
+      "properties": {
+        "Nom": {
+          "type": "string"
+        },
+        "Domaine fonctionnel": {
+          "type": "string"
+        },
+        "Clients": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Nom": {
+                "type": "string"
+              },
+              "Domaine fonctionnel": {
+                "type": "string"
+              },
+              "Poste": {
+                "type": "string"
+              },
+              "Période": {
+                "type": "object",
+                "properties": {
+                  "Début": {
+                    "type": "object",
+                    "properties": {
+                      "Année": {
+                        "type": "integer"
+                      },
+                      "Mois": {
+                        "type": "integer"
+                      },
+                      "Jour": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "Année",
+                      "Mois",
+                      "Jour"
+                    ]
+                  },
+                  "Fin": {
+                    "type": "object",
+                    "properties": {
+                      "Année": {
+                        "type": "integer"
+                      },
+                      "Mois": {
+                        "type": "integer"
+                      },
+                      "Jour": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "Année",
+                      "Mois",
+                      "Jour"
+                    ]
+                  }
+                },
+                "required": [
+                  "Début",
+                  "Fin"
+                ]
+              },
+              "Contexte": {
+                "type": "string"
+              },
+              "Réalisation": {
+                "type": "string"
+              },
+              "Techniques": {
+                "$ref": "#/definitions/TechniquesType"
+              }
+            },
+            "required": [
+              "Nom",
+              "Domaine fonctionnel",
+              "Poste",
+              "Période",
+              "Contexte",
+              "Réalisation",
+              "Techniques"
+            ]
+          }
+        }
+      },
+      "required": [
+        "Nom",
+        "Domaine fonctionnel",
+        "Clients"
+      ]
+    }
+  },
+  "required": [
+    "Nom",
+    "Prénom",
+    "Début d'expérience",
+    "Poste",
+    "Début Java",
+    "Début Angular",
+    "Disponibilité",
+    "Techniques",
+    "Postes",
+    "Fonctionnel",
+    "Employeur"
+  ],
+  "definitions": {
+    "TechniquesType": {
+      "type": "object",
+      "properties": {
+        "Langages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Tests": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Frameworks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Éditeurs de code": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Bases de données": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Intégration continue": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Versioning": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Bug tracker": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Autre outils": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Système d’exploitation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Architectures": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Méthodologies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

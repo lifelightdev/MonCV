@@ -1,0 +1,181 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CV Schema",
+  "description": "Schéma pour le fichier de CV",
+  "type": "object",
+  "properties": {
+    "Nom": {
+      "type": "string"
+    },
+    "Prénom": {
+      "type": "string"
+    },
+    "Titre": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "Sous titre": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "Téléphone": {
+      "type": "string"
+    },
+    "Email": {
+      "type": "string",
+      "format": "email"
+    },
+    "GitHub": {
+      "type": "string"
+    },
+    "LinkedIn": {
+      "type": "string"
+    },
+    "Présentation": {
+      "type": "string"
+    },
+    "Compétences": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string"
+            },
+            "EnGras": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "Description",
+            "EnGras"
+          ]
+        }
+      }
+    },
+    "Langues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Nom": {
+            "type": "string"
+          },
+          "Niveau": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "Nom",
+          "Niveau"
+        ]
+      }
+    },
+    "Formations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Titre": {
+            "type": "string"
+          },
+          "Année": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "Titre",
+          "Année"
+        ]
+      }
+    },
+    "Experiences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Année": {
+            "type": "string"
+          },
+          "Entreprise": {
+            "type": "string"
+          },
+          "Size": {
+            "type": "integer"
+          },
+          "Hauteur": {
+            "type": "integer"
+          },
+          "Domaine": {
+            "type": "string"
+          },
+          "Fonctions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "Titre": {
+                  "type": "string"
+                },
+                "EnGras": {
+                  "type": "boolean"
+                },
+                "Sous titre": {
+                  "type": "string"
+                },
+                "Tâches": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "Description": {
+                        "type": "string"
+                      },
+                      "EnGras": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "Description",
+                      "EnGras"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "Titre",
+                "Tâches"
+              ]
+            }
+          }
+        },
+        "required": [
+          "Année",
+          "Entreprise",
+          "Fonctions"
+        ]
+      }
+    }
+  },
+  "required": [
+    "Nom",
+    "Prénom",
+    "Titre",
+    "Sous titre",
+    "Téléphone",
+    "Email",
+    "GitHub",
+    "LinkedIn",
+    "Présentation",
+    "Compétences",
+    "Langues",
+    "Formations",
+    "Experiences"
+  ]
+}

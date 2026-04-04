@@ -13,21 +13,32 @@ public class JsonToPdfResumeAndSkills {
 
     private static final Logger logger = System.getLogger(JsonToPdfResumeAndSkills.class.getName());
 
+    protected static int lastExitCode = 0;
+
     static void main() {
+        lastExitCode = 0;
 
         logger.log(Level.INFO, "Début de la génération du PDF");
 
         String nameFileResumeJson = "CV.json";
         String nameFileDossierCompetencesJson = "DossierCompetences.json";
-        JsonNode resumeJson = null;
-        JsonNode dossierCompetencesJson = null;
+        JsonNode resumeJson;
+        JsonNode dossierCompetencesJson;
         try {
             resumeJson = ReadJson.getCvJson(nameFileResumeJson);
+            // Validation du CV par rapport au schéma
+            String schemaPath = "src/main/resources/CV.schema.json";
+            ReadJson.validateJson(resumeJson, schemaPath);
+
             dossierCompetencesJson = ReadJson.getCvJson(nameFileDossierCompetencesJson);
+            // Validation du Dossier de Compétences par rapport au schéma
+            String schemaSkillsPath = "src/main/resources/DossierCompetences.schema.json";
+            ReadJson.validateJson(dossierCompetencesJson, schemaSkillsPath);
 
         } catch (IOException e) {
             logger.log(Level.ERROR, "Erreur lors de la lecture des fichiers JSON ", e);
-            System.exit(-1);
+            lastExitCode = -1;
+            return;
         }
 
         // 2. Créer le document PDF
