@@ -63,6 +63,7 @@ class ReadJsonTest {
         JsonNode node = ReadJson.getCvJson(jsonPath.toString());
         IOException exception = Assertions.assertThrows(IOException.class, () -> ReadJson.validateJson(node, schemaPath.toString()));
         assertTrue(exception.getMessage().contains("est obligatoire"), "Le message d'erreur devrait indiquer que le champ est obligatoire. Message actuel : " + exception.getMessage());
+        assertTrue(exception.getMessage().contains("'Nom'"), "Le message devrait mentionner le nom du champ. Message actuel : " + exception.getMessage());
     }
 
     @Test

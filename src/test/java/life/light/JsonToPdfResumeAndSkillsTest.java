@@ -26,18 +26,21 @@ class JsonToPdfResumeAndSkillsTest {
     @DisplayName("Main devrait échouer si un fichier JSON est invalide")
     void mainShouldFailIfJsonInvalid() throws IOException {
         File cvFile = new File("CV.json");
-        byte[] originalContent = Files.readAllBytes(cvFile.toPath());
+        File dossierFile = new File("DossierCompetences.json");
+        byte[] originalCvContent = Files.readAllBytes(cvFile.toPath());
+        byte[] originalDossierContent = Files.readAllBytes(dossierFile.toPath());
 
         try {
-            // Rendre le JSON invalide par rapport au schéma (ex : champ obligatoire manquant)
-            String invalidJson = new String(originalContent).replace("\"Nom\": \"Test\"", "\"Autre\": \"test\"");
-            Files.writeString(cvFile.toPath(), invalidJson);
+            // Rendre les deux JSON invalides en vidant le contenu
+            Files.writeString(cvFile.toPath(), "{}");
+            Files.writeString(dossierFile.toPath(), "{}");
 
             JsonToPdfResumeAndSkills.main();
             assertEquals(-1, JsonToPdfResumeAndSkills.lastExitCode);
         } finally {
-            // Restaurer le fichier original
-            Files.write(cvFile.toPath(), originalContent);
+            // Restaurer les fichiers originaux
+            Files.write(cvFile.toPath(), originalCvContent);
+            Files.write(dossierFile.toPath(), originalDossierContent);
         }
     }
 
