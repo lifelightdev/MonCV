@@ -20,7 +20,14 @@ import static life.light.CreateResumePDF.FONT_SIZE_NORMAL;
 
 public class CreateSkillsPDF {
 
+    public static final String CUSTOMER = "Client";
+    public static final String POSITION_HELD = "Poste";
+    public static final String PERIOD = "Période";
+    public static final String CONTEXT = "Contexte";
+    public static final String REALISATION = "Réalisation";
+    public static final String TECHNICAL_ENVIRONMENT = "Environnement technique";
     private static final Logger logger = System.getLogger(CreateSkillsPDF.class.getName());
+    public static final String DOMAINE_FONCTIONNEL = "Domaine fonctionnel";
     static Font titleFontUp = FontFactory.getFont(com.lowagie.text.FontFactory.TIMES_ROMAN, 25, Font.BOLD);
     static Font titleFont = FontFactory.getFont(com.lowagie.text.FontFactory.TIMES_ROMAN, 20, Font.BOLD);
     static Font subtitleFontBoldUp = FontFactory.getFont(FontFactory.TIMES_ROMAN, 20, Font.BOLD);
@@ -51,12 +58,12 @@ public class CreateSkillsPDF {
                 BackgroundEvent event = new BackgroundEvent("images/Fond.png");
                 writer.setPageEvent(event);
             } catch (Exception e) {
-                // Fond optionnel
+                logger.log(Level.ERROR, "Échec de la création de l'image de fond du dossier de compétence", e);
             }
 
             document.open();
 
-            addTitle(document);
+            addTitle(document, "Dossier de compétence");
             addGeneralInformation(document, skillsJson);
             addExpertise(document, skillsJson);
             addEmployer(document, skillsJson);
@@ -70,36 +77,28 @@ public class CreateSkillsPDF {
         }
     }
 
-    private static void addTitle(Document document) {
-        Paragraph paragraphTitle = new Paragraph();
-        paragraphTitle.add(new Chunk("D".toUpperCase(), titleFontUp));
-        paragraphTitle.add(new Chunk("ossier de compétence".toUpperCase(), titleFont));
-        paragraphTitle.setAlignment(Element.ALIGN_CENTER);
-        document.add(paragraphTitle);
+    private static void addTitle(Document document, String title) {
+        Paragraph paragraph = new Paragraph();
+        paragraph.add(new Chunk(title.substring(0, 1).toUpperCase(), titleFontUp));
+        paragraph.add(new Chunk(title.substring(1).toUpperCase() + " :", titleFont));
+        paragraph.setAlignment(Element.ALIGN_CENTER);
+        document.add(paragraph);
 
-        Paragraph paragraphSpaceTitle = new Paragraph();
-        paragraphSpaceTitle.add(new Chunk("\n", titleFont));
-        paragraphSpaceTitle.setLeading(0, 1.5f);
-        paragraphSpaceTitle.setAlignment(Element.ALIGN_CENTER);
-        document.add(paragraphSpaceTitle);
+        Paragraph paragraphSpace = new Paragraph();
+        paragraphSpace.add(new Chunk("\n", titleFont));
+        paragraphSpace.setLeading(0, 1.5f);
+        paragraphSpace.setAlignment(Element.ALIGN_CENTER);
+        document.add(paragraphSpace);
     }
 
     private static void addGeneralInformation(Document document, JsonNode skillsJson) {
-        Paragraph paragraphGeneralInformationTitle = new Paragraph();
-        paragraphGeneralInformationTitle.add(new Chunk("I".toUpperCase(), subtitleFontBoldUp));
-        paragraphGeneralInformationTitle.add(new Chunk("nformations générales".toUpperCase(), subtitleFontBold));
-        paragraphGeneralInformationTitle.setAlignment(Element.ALIGN_LEFT);
-        document.add(paragraphGeneralInformationTitle);
-
-        addEmptyLine(document);
+        addSubtitle(document, "Informations générales");
 
         Paragraph paragraphGeneralInformation = new Paragraph();
-        paragraphGeneralInformation.add(new Chunk("N", normalFontBoldUp));
-        paragraphGeneralInformation.add(new Chunk("om :".toUpperCase(), normalFontBold));
+        addLabel(paragraphGeneralInformation, "Nom");
         paragraphGeneralInformation.add(new Chunk(" " + skillsJson.get("Nom").asText().toUpperCase() + "\n", normalFontUp));
 
-        paragraphGeneralInformation.add(new Chunk("P", normalFontBoldUp));
-        paragraphGeneralInformation.add(new Chunk("rénom :".toUpperCase(), normalFontBold));
+        addLabel(paragraphGeneralInformation, "Prénom");
         paragraphGeneralInformation.add(new Chunk(" " + skillsJson.get("Prénom").asText() + "\n", normalFont));
 
         paragraphGeneralInformation.add(new Chunk("A", normalFontBoldUp));
@@ -110,14 +109,12 @@ public class CreateSkillsPDF {
         Period difference = Period.between(dateExp, LocalDate.now());
         paragraphGeneralInformation.add(new Chunk(" " + difference.getYears() + " ans\n", normalFont));
 
-        paragraphGeneralInformation.add(new Chunk("P", normalFontBoldUp));
-        paragraphGeneralInformation.add(new Chunk("oste :".toUpperCase(), normalFontBold));
+        addLabel(paragraphGeneralInformation, "Poste");
         paragraphGeneralInformation.add(new Chunk(" " + skillsJson.get("Poste").asText(), normalFont));
 
         addTechExperience(paragraphGeneralInformation, skillsJson);
 
-        paragraphGeneralInformation.add(new Chunk("D", normalFontBoldUp));
-        paragraphGeneralInformation.add(new Chunk("isponibilité :".toUpperCase(), normalFontBold));
+        addLabel(paragraphGeneralInformation, "Disponibilité");
         paragraphGeneralInformation.add(new Chunk(" " + skillsJson.get("Disponibilité").asText() + "\n", normalFontUp));
 
         paragraphGeneralInformation.setLeading(0, 1.5f);
@@ -125,6 +122,19 @@ public class CreateSkillsPDF {
         document.add(paragraphGeneralInformation);
 
         addEmptyLine(document);
+    }
+
+    private static void addLabel(Paragraph paragraph, String label) {
+        paragraph.add(new Chunk(label.substring(0, 1).toUpperCase(), normalFontBoldUp));
+        paragraph.add(new Chunk(label.substring(1).toUpperCase() + " :", normalFontBold));
+    }
+
+    private static void addSubtitle(Document document, String title) {
+        Paragraph paragraph = new Paragraph();
+        paragraph.add(new Chunk(title.substring(0, 1).toUpperCase(), subtitleFontBoldUp));
+        paragraph.add(new Chunk(title.substring(1).toUpperCase() + " :", subtitleFontBold));
+        paragraph.setAlignment(Element.ALIGN_LEFT);
+        document.add(paragraph);
     }
 
     private static void addTechExperience(Paragraph paragraph, JsonNode skillsJson) {
@@ -142,20 +152,8 @@ public class CreateSkillsPDF {
     }
 
     private static void addExpertise(Document document, JsonNode skillsJson) {
-        Paragraph paragraphExpertiseTitle = new Paragraph();
-        paragraphExpertiseTitle.add(new Chunk("D".toUpperCase(), subtitleFontBoldUp));
-        paragraphExpertiseTitle.add(new Chunk("omaine de compétences".toUpperCase(), subtitleFontBold));
-        paragraphExpertiseTitle.setAlignment(Element.ALIGN_LEFT);
-        document.add(paragraphExpertiseTitle);
-
-        addEmptyLine(document);
-
-        Paragraph paragraphExpertiseSubTitle = new Paragraph();
-        paragraphExpertiseSubTitle.add(new Chunk("T".toUpperCase(), subSubtitleFontBoldUp));
-        paragraphExpertiseSubTitle.add(new Chunk("echniques".toUpperCase(), subSubtitleFontBold));
-        paragraphExpertiseSubTitle.setAlignment(Element.ALIGN_LEFT);
-        document.add(paragraphExpertiseSubTitle);
-
+        addSubtitle(document, "Domaine de compétences");
+        addSubSubtitle(document, "Techniques");
         Paragraph paragraphExpertise = new Paragraph();
         String[] techniqueKeys = {
                 "Langages", "Tests", "Frameworks", "Éditeurs de code",
@@ -173,24 +171,50 @@ public class CreateSkillsPDF {
         document.add(paragraphExpertise);
 
         addEmptyLine(document);
-        addStaticSections(document);
+        addStaticSections(document, skillsJson);
     }
 
-    private static void addStaticSections(Document document) {
-        Paragraph paragraphFunctionSubTitle = new Paragraph();
-        paragraphFunctionSubTitle.add(new Chunk("P".toUpperCase(), subSubtitleFontBoldUp));
-        paragraphFunctionSubTitle.add(new Chunk("ostes".toUpperCase(), subSubtitleFontBold));
-        paragraphFunctionSubTitle.setAlignment(Element.ALIGN_LEFT);
-        document.add(paragraphFunctionSubTitle);
+    private static void addSubSubtitle(Document document, String subtitle) {
+        Paragraph paragraph = new Paragraph();
+        paragraph.add(new Chunk(subtitle.substring(0, 1).toUpperCase(), subSubtitleFontBoldUp));
+        paragraph.add(new Chunk(subtitle.substring(1).toUpperCase() + " :", subSubtitleFontBold));
+        paragraph.setAlignment(Element.ALIGN_LEFT);
+        document.add(paragraph);
+    }
 
+    private static void addStaticSections(Document document, JsonNode skillsJson) {
+        addSubSubtitle(document, "Postes");
+        Paragraph paragraphPostes = new Paragraph();
+        JsonNode postesNode = skillsJson.get("Postes");
+        if (postesNode != null && postesNode.isArray()) {
+            for (int i = 0; i < postesNode.size(); i++) {
+                String poste = postesNode.get(i).asText();
+                if (!poste.isEmpty()) {
+                    paragraphPostes.add(new Chunk(poste, normalFont));
+                    if (i < postesNode.size() - 1) {
+                        paragraphPostes.add(new Chunk(", ", normalFont));
+                    }
+                }
+            }
+        }
+        document.add(paragraphPostes);
         addEmptyLine(document);
 
-        Paragraph paragraphFunctionalSubTitle = new Paragraph();
-        paragraphFunctionalSubTitle.add(new Chunk("F".toUpperCase(), subSubtitleFontBoldUp));
-        paragraphFunctionalSubTitle.add(new Chunk("onctionnel".toUpperCase(), subSubtitleFontBold));
-        paragraphFunctionalSubTitle.setAlignment(Element.ALIGN_LEFT);
-        document.add(paragraphFunctionalSubTitle);
-
+        addSubSubtitle(document, "Fonctionnel");
+        Paragraph paragraphFonctionnel = new Paragraph();
+        JsonNode fonctionnelNode = skillsJson.get("Fonctionnel");
+        if (fonctionnelNode != null && fonctionnelNode.isArray()) {
+            for (int i = 0; i < fonctionnelNode.size(); i++) {
+                String fonctionnel = fonctionnelNode.get(i).asText();
+                if (!fonctionnel.isEmpty()) {
+                    paragraphFonctionnel.add(new Chunk(fonctionnel, normalFont));
+                    if (i < fonctionnelNode.size() - 1) {
+                        paragraphFonctionnel.add(new Chunk(", ", normalFont));
+                    }
+                }
+            }
+        }
+        document.add(paragraphFonctionnel);
         addEmptyLine(document);
     }
 
@@ -198,83 +222,133 @@ public class CreateSkillsPDF {
         document.newPage();
 
         Paragraph paragraphEmployer = new Paragraph();
-        paragraphEmployer.add(new Chunk("E".toUpperCase(), subtitleFontBoldUp));
-        paragraphEmployer.add(new Chunk("mployeur : ".toUpperCase(), subtitleFontBold));
-        String employerName = skillsJson.get("Employeur").get("Nom").asText();
+        String employer = "Employeur";
+        paragraphEmployer.add(new Chunk(employer.substring(0, 1).toUpperCase(), subtitleFontBoldUp));
+        paragraphEmployer.add(new Chunk(employer.substring(1).toUpperCase() + " :", subtitleFontBold));
+        String employerName = skillsJson.get(employer).get("Nom").asText();
         paragraphEmployer.add(new Chunk(employerName.substring(0, 1).toUpperCase(), subtitleFontBoldUp));
         paragraphEmployer.add(new Chunk(employerName.substring(1).toUpperCase(), subtitleFontBold));
-        paragraphEmployer.add(new Chunk(" (" + skillsJson.get("Employeur").get("Domaine fonctionnel").asText().toUpperCase() + ")", subtitleFontBold));
+        paragraphEmployer.add(new Chunk(" (" + skillsJson.get(employer).get(DOMAINE_FONCTIONNEL).asText().toUpperCase() + ")", subtitleFontBold));
         paragraphEmployer.setAlignment(Element.ALIGN_LEFT);
         document.add(paragraphEmployer);
 
-        JsonNode clients = skillsJson.get("Employeur").get("Clients");
-        if (clients != null && clients.isArray()) {
-            for (JsonNode client : clients) {
-                addClient(document, client);
+        JsonNode customers = skillsJson.get(employer).get("Clients");
+        if (customers != null && customers.isArray()) {
+            for (JsonNode customer : customers) {
+                addCustomer(document, customer);
             }
         }
     }
 
-    private static void addClient(Document document, JsonNode client) {
+    private static void addCustomer(Document document, JsonNode customer) {
         addEmptyLine(document);
-        Paragraph paragraphClient = new Paragraph();
-        paragraphClient.add(new Chunk("C".toUpperCase(), subtitleFontBoldUp));
-        paragraphClient.add(new Chunk("lient : ".toUpperCase(), subtitleFontBold));
-        String clientName = client.get("Nom").asText();
-        paragraphClient.add(new Chunk(clientName.substring(0, 1).toUpperCase(), subtitleFontBoldUp));
-        paragraphClient.add(new Chunk(clientName.substring(1).toUpperCase(), subtitleFontBold));
-        paragraphClient.add(new Chunk(" (" + client.get("Domaine fonctionnel").asText().toUpperCase() + ")", subtitleFontBold));
-        document.add(paragraphClient);
+        addCutomerName(document, customer);
 
         Paragraph paragraphClientPoste = new Paragraph();
-        paragraphClientPoste.add(new Chunk("P", normalFontBoldUp));
-        paragraphClientPoste.add(new Chunk("oste : ".toUpperCase(), normalFontBold));
-        paragraphClientPoste.add(new Chunk(client.get("Poste").asText() + "\n", normalFont));
-        paragraphClientPoste.add(new Chunk("P", normalFontBoldUp));
-        paragraphClientPoste.add(new Chunk("ériode : ".toUpperCase(), normalFontBold));
-        JsonNode debut = client.get("Période").get("Début");
-        JsonNode fin = client.get("Période").get("Fin");
-        paragraphClientPoste.add(new Chunk(debut.get("Mois").asText() + "/" + debut.get("Année").asText() + " à " + fin.get("Mois").asText() + "/" + fin.get("Année").asText() + "\n", normalFont));
+        paragraphClientPoste.add(new Chunk(POSITION_HELD.substring(0, 1).toUpperCase(), normalFontBoldUp));
+        paragraphClientPoste.add(new Chunk((POSITION_HELD + " : ").substring(1).toUpperCase(), normalFontBold));
+        paragraphClientPoste.add(new Chunk(customer.get(POSITION_HELD).asText() + "\n", normalFont));
+        paragraphClientPoste.add(new Chunk(PERIOD.substring(0, 1).toUpperCase(), normalFontBoldUp));
+        paragraphClientPoste.add(new Chunk(PERIOD.substring(1).toUpperCase(), normalFontBold));
+        JsonNode debut = customer.get(PERIOD).get("Début");
+        JsonNode fin = customer.get(PERIOD).get("Fin");
+
+        LocalDate dateDebut = LocalDate.of(debut.get("Année").asInt(),
+                debut.get("Mois").asInt(),
+                debut.get("Jour").asInt());
+        LocalDate dateFin = LocalDate.of(fin.get("Année").asInt(),
+                fin.get("Mois").asInt(),
+                fin.get("Jour").asInt());
+        Period difference = Period.between(dateDebut, dateFin);
+
+        paragraphClientPoste.add(new Chunk(" de " + getNameOfTheMonth(debut) + " " + debut.get("Année").asText()
+                + " à " + getNameOfTheMonth(fin) + " " + fin.get("Année").asText()
+                + " (" + (difference.getMonths() + 1) + " mois)\n", normalFont));
         document.add(paragraphClientPoste);
 
         addEmptyLine(document);
-        addClientDetails(document, client);
+        addClientDetails(document, customer);
+
+    }
+
+    @javax.annotation.Nonnull
+    private static String getNameOfTheMonth(com.fasterxml.jackson.databind.JsonNode debut) {
+        int moisDebut = Integer.parseInt(debut.get("Mois").asText());
+        java.time.Month mois = java.time.Month.of(moisDebut);
+        return mois.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.FRANCE);
+    }
+
+    private static void addCutomerName(com.lowagie.text.Document document, com.fasterxml.jackson.databind.JsonNode customer) {
+        com.lowagie.text.Paragraph paragraph = new com.lowagie.text.Paragraph();
+        paragraph.add(new com.lowagie.text.Chunk(CUSTOMER.substring(0, 1).toUpperCase(), subtitleFontBoldUp));
+        paragraph.add(new com.lowagie.text.Chunk((CUSTOMER + " : ").substring(1).toUpperCase(), subtitleFontBold));
+        String customerName = customer.get("Nom").asText();
+        paragraph.add(new com.lowagie.text.Chunk(customerName.substring(0, 1).toUpperCase(), subtitleFontBoldUp));
+        paragraph.add(new com.lowagie.text.Chunk(customerName.substring(1).toUpperCase(), subtitleFontBold));
+        paragraph.add(new com.lowagie.text.Chunk(" (" + customer.get(DOMAINE_FONCTIONNEL).asText().toUpperCase() + ")", subtitleFontBold));
+        document.add(paragraph);
     }
 
     private static void addClientDetails(Document document, JsonNode client) {
-        addSectionTitle(document, "C", "ontexte : ");
-        Paragraph paragraphContexte = new Paragraph();
-        paragraphContexte.add(new Chunk(client.get("Contexte").asText(), normalFont));
-        paragraphContexte.setAlignment(Element.ALIGN_JUSTIFIED);
-        document.add(paragraphContexte);
+
+        Paragraph paragraph = new Paragraph();
+        addLabel(paragraph, CONTEXT);
+        paragraph.add(new Chunk("\n", normalFont));
+        paragraph.add(new Chunk(client.get(CONTEXT).asText(), normalFont));
+        paragraph.setAlignment(Element.ALIGN_JUSTIFIED);
+        document.add(paragraph);
 
         addEmptyLine(document);
-        addSectionTitle(document, "R", "éalisation : ");
+
         Paragraph paragraphRealisation = new Paragraph();
-        paragraphRealisation.add(new Chunk(client.get("Réalisation").asText(), normalFont));
+        addLabel(paragraphRealisation, REALISATION);
+        paragraphRealisation.add(new Chunk("\n", normalFont));
+        paragraphRealisation.add(new Chunk(client.get(REALISATION).asText(), normalFont));
         paragraphRealisation.setAlignment(Element.ALIGN_JUSTIFIED);
         document.add(paragraphRealisation);
 
         addEmptyLine(document);
-        addSectionTitle(document, "E", "nvironnement technique : ");
         Paragraph paragraphExpertiseClient = new Paragraph();
+        addLabel(paragraphExpertiseClient, TECHNICAL_ENVIRONMENT);
+        paragraphExpertiseClient.add(new Chunk("\n", normalFont));
         String[] techniqueKeys = {
                 "Langages", "Tests", "Frameworks", "Éditeurs de code",
                 "Bases de données", "Intégration continue", "Versioning",
                 "Bug tracker", "Autre outils", "Système d’exploitation",
                 "Architectures", "Méthodologies"
         };
+        boolean first = true;
         for (String key : techniqueKeys) {
-            techniques(paragraphExpertiseClient, client, key);
+            JsonNode techniquesNode = client.get("Techniques");
+            if (techniquesNode != null && !techniquesNode.isMissingNode() && !techniquesNode.isNull()) {
+                JsonNode techArray = techniquesNode.get(key);
+                if (techArray != null && !techArray.isMissingNode() && techArray.isArray() && !techArray.isEmpty()) {
+                    if (!first) {
+                        paragraphExpertiseClient.add(new Chunk(", ", normalFont));
+                    }
+                    addAllTechniques(paragraphExpertiseClient, client, key);
+                    first = false;
+                }
+            }
         }
         document.add(paragraphExpertiseClient);
     }
 
-    private static void addSectionTitle(Document document, String firstLetter, String rest) {
-        Paragraph title = new Paragraph();
-        title.add(new Chunk(firstLetter, normalFontBoldUp));
-        title.add(new Chunk(rest.toUpperCase(), normalFontBold));
-        document.add(title);
+    private static void addAllTechniques(Paragraph paragraphExpertise, JsonNode skillsJson, String technique) {
+        JsonNode techniquesNode = skillsJson.get("Techniques");
+        if (techniquesNode == null || techniquesNode.isMissingNode() || techniquesNode.isNull()) {
+            return;
+        }
+        JsonNode techArray = techniquesNode.get(technique);
+        if (techArray == null || techArray.isMissingNode() || !techArray.isArray() || techArray.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < techArray.size(); i++) {
+            paragraphExpertise.add(new Chunk(techArray.get(i).asText(), normalFont));
+            if (i < techArray.size() - 1) {
+                paragraphExpertise.add(new Chunk(", ", normalFont));
+            }
+        }
     }
 
     private static void addEmptyLine(Document document) {

@@ -125,6 +125,7 @@ public class CreateResumePDF {
             photo = addImage("Ma_Photo.jpg", 70);
         } catch (Exception e) {
             // Photo optionnelle pour les tests
+            logger.log(Level.ERROR, "La photo du CV n'a pas été trouvée", e.getMessage());
         }
 
         PdfPCell photoCell = new PdfPCell(photo);
