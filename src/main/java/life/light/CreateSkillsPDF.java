@@ -221,6 +221,14 @@ public class CreateSkillsPDF {
         LocalDate dateDebut = LocalDate.of( debut.get( "Année" ).asInt(), debut.get( "Mois" ).asInt(), debut.get( "Jour" ).asInt() );
         LocalDate dateFin = LocalDate.of( fin.get( "Année" ).asInt(), fin.get( "Mois" ).asInt(), fin.get( "Jour" ).asInt() );
         Period differencePeriod = Period.between( dateDebut, dateFin );
+        String difference = getDifference( differencePeriod );
+
+        paragraph.add( new Chunk( " de " + getNameOfTheMonth( debut ) + " " + debut.get( "Année" ).asText()
+                + " à " + getNameOfTheMonth( fin ) + " " + fin.get( "Année" ).asText()
+                + " (" + difference + ") \n", normalFont ) );
+    }
+
+    private static String getDifference(Period differencePeriod) {
         int differenceYear = differencePeriod.getYears();
         int differenceMonth = differencePeriod.getMonths();
         String difference = "";
@@ -234,10 +242,7 @@ public class CreateSkillsPDF {
             }
         }
         difference = difference + (differenceMonth + 1) + " mois";
-
-        paragraph.add( new Chunk( " de " + getNameOfTheMonth( debut ) + " " + debut.get( "Année" ).asText()
-                + " à " + getNameOfTheMonth( fin ) + " " + fin.get( "Année" ).asText()
-                + " (" + difference + ") \n", normalFont ) );
+        return difference;
     }
 
     private static void addCutomerName(Paragraph paragraph, JsonNode customer) {
