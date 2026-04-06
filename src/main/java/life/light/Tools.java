@@ -6,6 +6,7 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
 import com.lowagie.text.pdf.PdfWriter;
 
 import java.io.FileNotFoundException;
@@ -46,10 +47,8 @@ public class Tools {
     static Font subtitleFontBold = getFont( TIMES_ROMAN, 16, BOLD );
     static Font subSubtitleFontBoldUp = getFont( TIMES_ROMAN, 18, BOLD );
     static Font subSubtitleFontBold = getFont( TIMES_ROMAN, 14, BOLD );
-    static Font normalFontUp = getFont( TIMES_ROMAN, FONT_SIZE_NORMAL + 2 );
-    static Font normalFont = getFont( TIMES_ROMAN, FONT_SIZE_NORMAL + 1 );
-    static Font normalFontBoldUp = getFont( TIMES_ROMAN, FONT_SIZE_NORMAL + 2, BOLD );
-    static Font normalFontBold = getFont( TIMES_ROMAN, FONT_SIZE_NORMAL - 1, BOLD );
+    static Font normalFontUp = getFont( TIMES_ROMAN, FONT_SIZE_NORMAL + 3 );
+    static Font normalFont = getFont( TIMES_ROMAN, FONT_SIZE_NORMAL );
     static Font emptyLineFont = getFont( TIMES_ROMAN, 2 );
 
     static Document createDocument(String namePdfFile) {
@@ -90,43 +89,54 @@ public class Tools {
         document.add( paragraphSpace );
     }
 
+    static void setChunkUnderline(Chunk chunk, float size) {
+        // Calcul empirique basé sur les valeurs précédentes :
+        // Épaisseur : environ 6% de la taille de la police
+        // Décalage : environ -15% de la taille de la police
+        float thickness = size * 0.06f;
+        float offset = -size * 0.15f;
+        chunk.setUnderline( thickness, offset );
+    }
+
     static void upperCasse(Paragraph paragraph, String title, Boolean isUnderline) {
         Chunk chunkUp = new Chunk( title.substring( 0, 1 ).toUpperCase(), titleFontUp );
         if (isUnderline) {
-            chunkUp.setUnderline( 1.5f, -2f );
+            setChunkUnderline( chunkUp, titleFontUp.getSize() );
         }
         paragraph.add( chunkUp );
         Chunk chunk = new Chunk( title.substring( 1 ).toUpperCase(), titleFont );
         if (isUnderline) {
-            chunk.setUnderline( 1.5f, -2f );
+            setChunkUnderline( chunk, titleFontUp.getSize() );
         }
         paragraph.add( chunk );
     }
 
-    static void addLabel(Paragraph paragraph, String label, Boolean isUnderline) {
+    static void addLabel(Paragraph paragraph, String label, Boolean isUnderline, Boolean isTowPoints) {
         Chunk chunkUp = new Chunk( label.substring( 0, 1 ).toUpperCase(), normalFontUp );
         if (isUnderline) {
-            chunkUp.setUnderline( 1f, -1.5f );
+            setChunkUnderline( chunkUp, normalFontUp.getSize() );
         }
         paragraph.add( chunkUp );
         Chunk chunk = new Chunk( label.substring( 1 ).toUpperCase(), normalFont );
         if (isUnderline) {
-            chunk.setUnderline( 1f, -1.5f );
+            setChunkUnderline( chunk, normalFontUp.getSize() );
         }
         paragraph.add( chunk );
-        paragraph.add( new Chunk( " : ", normalFont ) );
+        if (isTowPoints) {
+            paragraph.add( new Chunk( " : ", normalFont ) );
+        }
     }
 
     static void addSubtitle(com.lowagie.text.Document document, String title, Boolean isUnderline) {
         Paragraph paragraph = new Paragraph();
         Chunk chunkUp = new Chunk( title.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp );
         if (isUnderline) {
-            chunkUp.setUnderline( 1.2f, -1.8f );
+            setChunkUnderline( chunkUp, subtitleFontBoldUp.getSize() );
         }
         paragraph.add( chunkUp );
-        Chunk chunk = new Chunk( title.substring( 1 ).toUpperCase() + " :", subtitleFontBold );
+        Chunk chunk = new Chunk( title.substring( 1 ).toUpperCase(), subtitleFontBold );
         if (isUnderline) {
-            chunk.setUnderline( 1.2f, -1.8f );
+            setChunkUnderline( chunk, subtitleFontBoldUp.getSize() );
         }
         paragraph.add( chunk );
         paragraph.setAlignment( com.lowagie.text.Element.ALIGN_LEFT );
@@ -139,10 +149,18 @@ public class Tools {
         return mois.getDisplayName( java.time.format.TextStyle.FULL, java.util.Locale.FRANCE );
     }
 
-    static void addEmptyLine(com.lowagie.text.Document document) {
+    static void addEmptyLine(Document document) {
         Paragraph p = new Paragraph();
         p.add( new Chunk( "\n", emptyLineFont ) );
         document.add( p );
+    }
+
+    static void addEmptyLine(Paragraph paragraph) {
+        paragraph.add( new Chunk( "\n", emptyLineFont ) );
+    }
+
+    static void addEmptyLine(Phrase phrase) {
+        phrase.add( new Chunk( "\n", emptyLineFont ) );
     }
 
     static void addList(Document document, Paragraph paragraphPostes, JsonNode postesNode) {
@@ -163,16 +181,20 @@ public class Tools {
 
     static void addParagraphLabel(Document document, JsonNode client, String context) {
         Paragraph paragraph = new Paragraph();
-        addLabel( paragraph, context, true );
+        addLabel( paragraph, context, true, true );
         paragraph.add( new Chunk( "\n", normalFont ) );
         paragraph.add( new Chunk( client.get( context ).asText(), normalFont ) );
         paragraph.setAlignment( Element.ALIGN_JUSTIFIED );
         document.add( paragraph );
     }
 
-    static void addParagraphLabel(Paragraph paragraph, JsonNode client, String context) {
-        addLabel( paragraph, context, true );
-        paragraph.add( new Chunk( "\n" + client.get( context ).asText() + "\n", normalFont ) );
+    static void addParagraphLabel(Paragraph paragraph, JsonNode client, String context, Boolean isReturnToLine) {
+        addLabel( paragraph, context, true, true );
+        if (isReturnToLine) {
+            paragraph.add( new Chunk( "\n" + client.get( context ).asText() + "\n", normalFont ) );
+        } else {
+            paragraph.add( new Chunk( client.get( context ).asText() + "\n", normalFont ) );
+        }
         paragraph.setAlignment( Element.ALIGN_JUSTIFIED );
     }
 }

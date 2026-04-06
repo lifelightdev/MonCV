@@ -6,6 +6,7 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
 
 import java.lang.System.Logger;
 import java.time.LocalDate;
@@ -38,8 +39,6 @@ import static life.light.Tools.addSubtitle;
 import static life.light.Tools.addTitle;
 import static life.light.Tools.getNameOfTheMonth;
 import static life.light.Tools.normalFont;
-import static life.light.Tools.normalFontBold;
-import static life.light.Tools.normalFontBoldUp;
 import static life.light.Tools.normalFontUp;
 import static life.light.Tools.subSubtitleFontBold;
 import static life.light.Tools.subSubtitleFontBoldUp;
@@ -75,26 +74,24 @@ public class CreateSkillsPDF {
         addSubtitle( document, "Informations générales", false );
 
         Paragraph paragraph = new Paragraph();
-        addLabel( paragraph, NAME, true );
+        addLabel( paragraph, NAME, true, true );
         paragraph.add( new Chunk( " " + skillsJson.get( NAME ).asText().toUpperCase() + "\n", normalFontUp ) );
 
-        addLabel( paragraph, FIRST_NAME, true );
+        addLabel( paragraph, FIRST_NAME, true, true );
         paragraph.add( new Chunk( " " + skillsJson.get( FIRST_NAME ).asText() + "\n", normalFont ) );
 
-        addLabel( paragraph, YEAR_OF_EXPERIENCE, true );
+        addLabel( paragraph, YEAR_OF_EXPERIENCE, true, true );
         String startExp = "Début d'expérience";
-        LocalDate dateExp = LocalDate.of( skillsJson.get( startExp ).get( YEAR ).asInt(),
-                skillsJson.get( startExp ).get( MONTH ).asInt(),
-                skillsJson.get( startExp ).get( DAY ).asInt() );
+        LocalDate dateExp = LocalDate.of( skillsJson.get( startExp ).get( YEAR ).asInt(), skillsJson.get( startExp ).get( MONTH ).asInt(), skillsJson.get( startExp ).get( DAY ).asInt() );
         Period difference = Period.between( dateExp, LocalDate.now() );
         paragraph.add( new Chunk( " " + difference.getYears() + " ans\n", normalFont ) );
 
-        addLabel( paragraph, POSITION_HELD, true );
+        addLabel( paragraph, POSITION_HELD, true, true );
         paragraph.add( new Chunk( " " + skillsJson.get( POSITION_HELD ).asText(), normalFont ) );
 
         addTechExperience( paragraph, skillsJson );
 
-        addLabel( paragraph, AVAILABILITY, true );
+        addLabel( paragraph, AVAILABILITY, true, true );
         paragraph.add( new Chunk( " " + skillsJson.get( AVAILABILITY ).asText() + "\n", normalFontUp ) );
 
         paragraph.setLeading( 0, 1.5f );
@@ -117,7 +114,7 @@ public class CreateSkillsPDF {
     private static void addExpertise(Document document, JsonNode skillsJson) {
         addSubtitle( document, "Domaine de compétences", false );
         Paragraph paragraphTechniques = new Paragraph();
-        addLabel( paragraphTechniques, TECHNIQUES, false );
+        addLabel( paragraphTechniques, TECHNIQUES, false, true );
         paragraphTechniques.add( new Chunk( "\n", normalFont ) );
 
         for (String key : TECHNICAL_KEYS) {
@@ -131,14 +128,14 @@ public class CreateSkillsPDF {
         // Poste
         Paragraph paragraphOccupiedPositions = new Paragraph();
         paragraphOccupiedPositions.add( new Chunk( "\n", normalFont ) );
-        addLabel( paragraphOccupiedPositions, OCCUPIED_POSITIONS, true );
+        addLabel( paragraphOccupiedPositions, OCCUPIED_POSITIONS, false, false );
         paragraphOccupiedPositions.add( new Chunk( "\n", normalFont ) );
         JsonNode occupiedPositionsNode = skillsJson.get( OCCUPIED_POSITIONS );
         addList( document, paragraphOccupiedPositions, occupiedPositionsNode );
 
-        // Domaines fonctionnel
+        // Domaines fonctionnels
         Paragraph paragraphFunctionalDomain = new Paragraph();
-        addLabel( paragraphFunctionalDomain, FUNCTIONAL_DOMAINS, true );
+        addLabel( paragraphFunctionalDomain, FUNCTIONAL_DOMAINS, false, true );
         paragraphFunctionalDomain.add( new Chunk( "\n", normalFont ) );
         JsonNode functionalDomainNode = skillsJson.get( FUNCTIONAL_DOMAINS );
         addList( document, paragraphFunctionalDomain, functionalDomainNode );
@@ -149,11 +146,12 @@ public class CreateSkillsPDF {
         if (employerNode != null && employerNode.isArray()) {
             for (JsonNode employer : employerNode) {
                 Paragraph paragraph = new Paragraph();
+                // Le texte restera toujours groupé sur une seule page
                 paragraph.setKeepTogether( true );
-                paragraph.add( new Chunk( EMPLOYER.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
-                paragraph.add( new Chunk( EMPLOYER.substring( 1 ).toUpperCase() + " : ", subtitleFontBold ) );
-                getName( employer, paragraph, subtitleFontBoldUp, subtitleFontBold );
-                paragraph.setAlignment( Element.ALIGN_LEFT );
+                paragraph.setSpacingAfter( 2f );
+                paragraph.setSpacingBefore( 2f );
+                paragraph.setLeading( 16f );
+                getLineEmployer( employer, paragraph );
                 JsonNode customers = employer.get( "Clients" );
                 if (customers != null && customers.isArray()) {
                     for (JsonNode customer : customers) {
@@ -161,21 +159,51 @@ public class CreateSkillsPDF {
                     }
                 } else {
                     addMission( paragraph, employer );
-                    addMissionDetails( paragraph, employer );
                 }
                 document.add( paragraph );
             }
         }
     }
 
+    private static void getLineEmployer(JsonNode employer, Paragraph paragraph) {
+        Phrase phrase = new Phrase();
+        phrase.add( new Chunk( EMPLOYER.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
+        phrase.add( new Chunk( EMPLOYER.substring( 1 ).toUpperCase() + " : ", subtitleFontBold ) );
+        getName( employer, phrase, subtitleFontBoldUp, subtitleFontBold );
+        paragraph.add( phrase );
+    }
+
     private static void getName(JsonNode employer, Paragraph paragraph, Font subtitleFontBoldUp, Font subtitleFontBold) {
         String employerName = employer.get( NAME ).asText();
-        paragraph.add( new Chunk( employerName.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
-        paragraph.add( new Chunk( employerName.substring( 1 ).toUpperCase(), subtitleFontBold ) );
-        String functionalDomain = employer.get( FUNCTIONAL_DOMAIN ).asText();
-        paragraph.add( new Chunk( " (" + functionalDomain.substring( 0, 1 ).toUpperCase(), subSubtitleFontBoldUp ) );
-        paragraph.add( new Chunk( functionalDomain.substring( 1 ).toUpperCase(), subSubtitleFontBold ) );
-        paragraph.add( new Chunk( ") \n", subSubtitleFontBoldUp ) );
+        if (!employer.get( FUNCTIONAL_DOMAIN ).asText().isEmpty()) {
+            paragraph.add( new Chunk( employerName.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
+            paragraph.add( new Chunk( employerName.substring( 1 ).toUpperCase(), subtitleFontBold ) );
+
+            String functionalDomain = employer.get( FUNCTIONAL_DOMAIN ).asText();
+            paragraph.add( new Chunk( " (" + functionalDomain.substring( 0, 1 ).toUpperCase(), subSubtitleFontBoldUp ) );
+            paragraph.add( new Chunk( functionalDomain.substring( 1 ).toUpperCase(), subSubtitleFontBold ) );
+            paragraph.add( new Chunk( ") \n", subSubtitleFontBoldUp ) );
+        } else {
+            paragraph.add( new Chunk( employerName.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
+            paragraph.add( new Chunk( employerName.substring( 1 ).toUpperCase() + "\n", subtitleFontBold ) );
+        }
+    }
+
+    private static void getName(JsonNode employer, Phrase phrase, Font subtitleFontBoldUp, Font subtitleFontBold) {
+        String employerName = employer.get( NAME ).asText();
+        if (!employer.get( FUNCTIONAL_DOMAIN ).asText().isEmpty()) {
+            phrase.add( new Chunk( employerName.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
+            phrase.add( new Chunk( employerName.substring( 1 ).toUpperCase(), subtitleFontBold ) );
+
+            String functionalDomain = employer.get( FUNCTIONAL_DOMAIN ).asText();
+            phrase.add( new Chunk( " (" + functionalDomain.substring( 0, 1 ).toUpperCase(), subSubtitleFontBoldUp ) );
+            phrase.add( new Chunk( functionalDomain.substring( 1 ).toUpperCase(), subSubtitleFontBold ) );
+            phrase.add( new Chunk( ") \n", subSubtitleFontBoldUp ) );
+        } else {
+            phrase.add( new Chunk( employerName.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
+            phrase.add( new Chunk( employerName.substring( 1 ).toUpperCase(), subtitleFontBold ) );
+            addEmptyLine( phrase );
+        }
     }
 
     private static void addCustomer(Paragraph paragraph, JsonNode customer) {
@@ -183,54 +211,59 @@ public class CreateSkillsPDF {
             addCutomerName( paragraph, customer );
         }
         addMission( paragraph, customer );
-        addMissionDetails( paragraph, customer );
-    }
-
-    private static void addMission(Paragraph paragraph, JsonNode customer) {
-        addPositionHeld( paragraph, customer );
-        addPeriod( paragraph, customer );
     }
 
     private static void addPeriod(Paragraph paragraph, JsonNode customer) {
-        paragraph.add( new Chunk( PERIOD.substring( 0, 1 ).toUpperCase(), normalFontBoldUp ) );
-        paragraph.add( new Chunk( PERIOD.substring( 1 ).toUpperCase(), normalFontBold ) );
+        addLabel( paragraph, PERIOD, true, false );
         JsonNode debut = customer.get( PERIOD ).get( "Début" );
         JsonNode fin = customer.get( PERIOD ).get( "Fin" );
 
         LocalDate dateDebut = LocalDate.of( debut.get( "Année" ).asInt(), debut.get( "Mois" ).asInt(), debut.get( "Jour" ).asInt() );
         LocalDate dateFin = LocalDate.of( fin.get( "Année" ).asInt(), fin.get( "Mois" ).asInt(), fin.get( "Jour" ).asInt() );
-        Period difference = Period.between( dateDebut, dateFin );
+        Period differencePeriod = Period.between( dateDebut, dateFin );
+        int differenceYear = differencePeriod.getYears();
+        int differenceMonth = differencePeriod.getMonths();
+        String difference = "";
+        if (differenceYear > 0) {
+            difference = differenceYear + " an";
+            if (differenceYear > 1) {
+                difference = differenceYear + "s";
+            }
+            if (differenceMonth > 0) {
+                difference = difference + " et ";
+            }
+        }
+        difference = difference + (differenceMonth + 1) + " mois";
 
-        paragraph.add( new Chunk( " de " + getNameOfTheMonth( debut ) + " " + debut.get( "Année" ).asText() +
-                " à " + getNameOfTheMonth( fin ) + " " + fin.get( "Année" ).asText() + " (" + (difference.getMonths() + 1) + " mois) \n", normalFont ) );
-    }
-
-    private static void addPositionHeld(Paragraph paragraph, JsonNode customer) {
-        paragraph.add( new Chunk( POSITION_HELD.substring( 0, 1 ).toUpperCase(), normalFontBoldUp ) );
-        paragraph.add( new Chunk( (POSITION_HELD + " : ").substring( 1 ).toUpperCase(), normalFontBold ) );
-        paragraph.add( new Chunk( customer.get( POSITION_HELD ).asText() + "\n", normalFont ) );
+        paragraph.add( new Chunk( " de " + getNameOfTheMonth( debut ) + " " + debut.get( "Année" ).asText()
+                + " à " + getNameOfTheMonth( fin ) + " " + fin.get( "Année" ).asText()
+                + " (" + difference + ") \n", normalFont ) );
     }
 
     private static void addCutomerName(Paragraph paragraph, JsonNode customer) {
-        paragraph.add( new Chunk( CUSTOMER.substring( 0, 1 ).toUpperCase(), subSubtitleFontBoldUp ) );
-        paragraph.add( new Chunk( (CUSTOMER + " : ").substring( 1 ).toUpperCase(), subSubtitleFontBold ) );
+        if (!customer.get( FUNCTIONAL_DOMAIN ).asText().isEmpty()) {
+            paragraph.add( new Chunk( CUSTOMER.substring( 0, 1 ).toUpperCase(), subSubtitleFontBoldUp ) );
+            paragraph.add( new Chunk( (CUSTOMER + " : ").substring( 1 ).toUpperCase(), subSubtitleFontBold ) );
+        }
         getName( customer, paragraph, Tools.subSubtitleFontBoldUp, Tools.subSubtitleFontBold );
     }
 
-    private static void addMissionDetails(Paragraph paragraph, JsonNode client) {
-        addParagraphLabel( paragraph, client, CONTEXT );
-        addParagraphLabel( paragraph, client, REALISATION );
-        addLabel( paragraph, TECHNICAL_ENVIRONMENT, true );
+    private static void addMission(Paragraph paragraph, JsonNode customer) {
+        addParagraphLabel( paragraph, customer, POSITION_HELD, false );
+        addPeriod( paragraph, customer );
+        addParagraphLabel( paragraph, customer, CONTEXT, true );
+        addParagraphLabel( paragraph, customer, REALISATION, true );
+        addLabel( paragraph, TECHNICAL_ENVIRONMENT, true, true );
         boolean first = true;
         for (String key : TECHNICAL_KEYS) {
-            JsonNode techniquesNode = client.get( TECHNIQUES );
+            JsonNode techniquesNode = customer.get( TECHNIQUES );
             if (techniquesNode != null && !techniquesNode.isMissingNode() && !techniquesNode.isNull()) {
                 JsonNode techArray = techniquesNode.get( key );
                 if (techArray != null && !techArray.isMissingNode() && techArray.isArray() && !techArray.isEmpty()) {
                     if (!first) {
                         paragraph.add( new Chunk( ", ", normalFont ) );
                     }
-                    addAllTechniques( paragraph, client, key );
+                    addAllTechniques( paragraph, customer, key );
                     first = false;
                 }
             }
@@ -265,7 +298,7 @@ public class CreateSkillsPDF {
             return;
         }
 
-        addLabel( paragraphExpertise, technique, true );
+        addLabel( paragraphExpertise, technique, true, true );
 
         for (int i = 0; i < techArray.size(); i++) {
             paragraphExpertise.add( new Chunk( " " + techArray.get( i ).asText(), normalFont ) );
