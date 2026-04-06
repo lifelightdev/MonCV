@@ -79,7 +79,7 @@ public class Tools {
 
     static void addTitle(com.lowagie.text.Document document) {
         Paragraph paragraph = new Paragraph();
-        upperCasse( paragraph, "Dossier de compétence" );
+        upperCasse( paragraph, "Dossier de compétence", false );
         paragraph.setAlignment( com.lowagie.text.Element.ALIGN_CENTER );
         document.add( paragraph );
 
@@ -90,20 +90,45 @@ public class Tools {
         document.add( paragraphSpace );
     }
 
-    static void upperCasse(Paragraph paragraph, String title) {
-        paragraph.add( new Chunk( title.substring( 0, 1 ).toUpperCase(), titleFontUp ) );
-        paragraph.add( new Chunk( title.substring( 1 ).toUpperCase(), titleFont ) );
+    static void upperCasse(Paragraph paragraph, String title, Boolean isUnderline) {
+        Chunk chunkUp = new Chunk( title.substring( 0, 1 ).toUpperCase(), titleFontUp );
+        if (isUnderline) {
+            chunkUp.setUnderline( 1.5f, -2f );
+        }
+        paragraph.add( chunkUp );
+        Chunk chunk = new Chunk( title.substring( 1 ).toUpperCase(), titleFont );
+        if (isUnderline) {
+            chunk.setUnderline( 1.5f, -2f );
+        }
+        paragraph.add( chunk );
     }
 
-    static void addLabel(Paragraph paragraph, String label) {
-        paragraph.add( new Chunk( label.substring( 0, 1 ).toUpperCase(), normalFontBoldUp ) );
-        paragraph.add( new Chunk( label.substring( 1 ).toUpperCase() + " : ", normalFontBold ) );
+    static void addLabel(Paragraph paragraph, String label, Boolean isUnderline) {
+        Chunk chunkUp = new Chunk( label.substring( 0, 1 ).toUpperCase(), normalFontUp );
+        if (isUnderline) {
+            chunkUp.setUnderline( 1f, -1.5f );
+        }
+        paragraph.add( chunkUp );
+        Chunk chunk = new Chunk( label.substring( 1 ).toUpperCase(), normalFont );
+        if (isUnderline) {
+            chunk.setUnderline( 1f, -1.5f );
+        }
+        paragraph.add( chunk );
+        paragraph.add( new Chunk( " : ", normalFont ) );
     }
 
-    static void addSubtitle(com.lowagie.text.Document document, String title) {
+    static void addSubtitle(com.lowagie.text.Document document, String title, Boolean isUnderline) {
         Paragraph paragraph = new Paragraph();
-        paragraph.add( new Chunk( title.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
-        paragraph.add( new Chunk( title.substring( 1 ).toUpperCase() + " :", subtitleFontBold ) );
+        Chunk chunkUp = new Chunk( title.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp );
+        if (isUnderline) {
+            chunkUp.setUnderline( 1.2f, -1.8f );
+        }
+        paragraph.add( chunkUp );
+        Chunk chunk = new Chunk( title.substring( 1 ).toUpperCase() + " :", subtitleFontBold );
+        if (isUnderline) {
+            chunk.setUnderline( 1.2f, -1.8f );
+        }
+        paragraph.add( chunk );
         paragraph.setAlignment( com.lowagie.text.Element.ALIGN_LEFT );
         document.add( paragraph );
     }
@@ -138,7 +163,7 @@ public class Tools {
 
     static void addParagraphLabel(Document document, JsonNode client, String context) {
         Paragraph paragraph = new Paragraph();
-        addLabel( paragraph, context );
+        addLabel( paragraph, context, true );
         paragraph.add( new Chunk( "\n", normalFont ) );
         paragraph.add( new Chunk( client.get( context ).asText(), normalFont ) );
         paragraph.setAlignment( Element.ALIGN_JUSTIFIED );
@@ -146,7 +171,7 @@ public class Tools {
     }
 
     static void addParagraphLabel(Paragraph paragraph, JsonNode client, String context) {
-        addLabel( paragraph, context );
+        addLabel( paragraph, context, true );
         paragraph.add( new Chunk( "\n" + client.get( context ).asText() + "\n", normalFont ) );
         paragraph.setAlignment( Element.ALIGN_JUSTIFIED );
     }
