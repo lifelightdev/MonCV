@@ -85,7 +85,7 @@
         "type": "string"
       }
     },
-    "Fonctionnel": {
+    "Domaines fonctionnel": {
       "type": "array",
       "items": {
         "type": "string"
@@ -185,8 +185,7 @@
       },
       "required": [
         "Nom",
-        "Domaine fonctionnel",
-        "Clients"
+        "Domaine fonctionnel"
       ]
     }
   },
@@ -200,7 +199,7 @@
     "Disponibilité",
     "Techniques",
     "Postes",
-    "Fonctionnel",
+    "Domaines fonctionnel",
     "Employeur"
   ],
   "definitions": {
