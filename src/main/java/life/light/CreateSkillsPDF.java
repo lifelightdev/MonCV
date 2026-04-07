@@ -6,6 +6,7 @@ import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.System.Logger;
 import java.time.LocalDate;
@@ -53,7 +54,9 @@ public class CreateSkillsPDF {
             addEmployer( tools, skillsJson );
 
             tools.close();
-            document.save( nameFileSkillsPDF );
+            try (FileOutputStream fos = new FileOutputStream( nameFileSkillsPDF )) {
+                document.save( fos );
+            }
         } catch (Exception e) {
             logger.log( Logger.Level.ERROR, "Échec de la génération du dossier de compétence", e );
         }

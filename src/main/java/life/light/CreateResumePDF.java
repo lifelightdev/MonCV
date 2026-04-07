@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
@@ -25,7 +26,9 @@ public class CreateResumePDF {
             addBody( resumeJson, tools );
 
             tools.close();
-            document.save( nameFileCVPDF );
+            try (FileOutputStream fos = new FileOutputStream( nameFileCVPDF )) {
+                document.save( fos );
+            }
         } catch (Exception e) {
             logger.log( Level.ERROR, "Échec de la génération du CV", e );
         }
