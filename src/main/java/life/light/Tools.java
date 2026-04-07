@@ -29,4 +29,8 @@ public class Tools {
         java.time.Month mois = java.time.Month.of( moisDebut );
         return mois.getDisplayName( java.time.format.TextStyle.FULL, java.util.Locale.FRANCE );
     }
+
+    static String getBackgroundPath() {
+        return "images/Fond.png";
+    }
 }

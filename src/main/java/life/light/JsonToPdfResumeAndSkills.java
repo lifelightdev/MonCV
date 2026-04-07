@@ -1,6 +1,7 @@
 package life.light;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.pdfbox.multipdf.PDFMergerUtility;
 
 import java.io.IOException;
 import java.lang.System.Logger;
@@ -41,10 +42,19 @@ public class JsonToPdfResumeAndSkills {
             return;
         }
 
-        // 2. Créer le document PDF
-        createResume( resumeJson );
-        createSkills( dossierCompetencesJson );
-        logger.log( Level.INFO, "Fin de la génération des PDF" );
+        // 2. Créer les documents PDF
+        try {
+            PDFMergerUtility ut = new PDFMergerUtility();
+            ut.addSource( createResume( resumeJson ) );
+            ut.addSource( createSkills( dossierCompetencesJson ) );
+            String nameFileResumePDF = resumeJson.get( "Nom" ).asText() + " " + resumeJson.get( "Prénom" ).asText() + " - CV et Dossier de compétence.pdf";
+            ut.setDestinationFileName( nameFileResumePDF );
+            ut.mergeDocuments( null );
+            logger.log( Level.INFO, "Fin de la génération des PDF" );
+        } catch (Exception e) {
+            logger.log( Level.ERROR, "Échec de la génération du CV", e );
+            System.exit( 1 );
+        }
     }
 
 }

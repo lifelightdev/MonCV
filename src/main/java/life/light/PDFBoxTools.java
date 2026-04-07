@@ -88,6 +88,12 @@ public class PDFBoxTools {
         addText( text, fontSize, font, startX, width - 2 * marginLR );
     }
 
+    public void addCenteredText(String text, float fontSize, PDFont font, float width) throws IOException {
+        float textWidth = font.getStringWidth( text ) / 1000 * fontSize;
+        float startX = (width - textWidth) / 2;
+        addText( text, fontSize, font, startX, width - 2 * marginLR );
+    }
+
     private List<String> wrapText(String text, float fontSize, PDFont font, float maxWidth) throws IOException {
         List<String> lines = new ArrayList<>();
         String[] words = text.split( "\\s+" );

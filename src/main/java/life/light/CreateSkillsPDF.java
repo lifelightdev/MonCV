@@ -40,8 +40,7 @@ public class CreateSkillsPDF {
     public static final PDFont FONT_PLAIN = new PDType1Font( Standard14Fonts.FontName.TIMES_ROMAN );
     public static final PDFont FONT_BOLD = new PDType1Font( Standard14Fonts.FontName.TIMES_BOLD );
 
-    static void createSkills(JsonNode skillsJson) {
-
+    static String createSkills(JsonNode skillsJson) {
         String nameFileSkillsPDF = skillsJson.get( NAME ).asText() + " " + skillsJson.get( FIRST_NAME ).asText() + " - Dossier de compétence.pdf";
         try (PDDocument document = new PDDocument()) {
             PDFBoxTools tools = new PDFBoxTools( document, "images/Fond.png" );
@@ -60,6 +59,7 @@ public class CreateSkillsPDF {
         } catch (Exception e) {
             logger.log( Logger.Level.ERROR, "Échec de la génération du dossier de compétence", e );
         }
+        return nameFileSkillsPDF;
     }
 
     private static void addTitle(PDFBoxTools tools) throws IOException {
