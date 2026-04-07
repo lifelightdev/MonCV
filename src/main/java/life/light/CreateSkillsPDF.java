@@ -165,6 +165,16 @@ public class CreateSkillsPDF {
         if (employerNode != null && employerNode.isArray()) {
             tools.addNewPage();
             for (JsonNode employer : employerNode) {
+                final String employerHeader = getEmployerHeaderText( employer );
+                tools.setOnNewPage( () -> {
+                    try {
+                        tools.addText( employerHeader + " (suite)", 14, FONT_BOLD );
+                        tools.setCursorY( tools.getCursorY() - 5 );
+                    } catch (IOException e) {
+                        logger.log( Logger.Level.ERROR, "Erreur lors de l'ajout du rappel de l'employeur", e );
+                    }
+                } );
+
                 float employerHeaderHeight = calculateEmployerHeaderHeight( tools, employer );
                 if (tools.getCursorY() - employerHeaderHeight < tools.getMarginBottom()) {
                     tools.addNewPage();
@@ -183,6 +193,7 @@ public class CreateSkillsPDF {
                     addMission( tools, employer );
                 }
             }
+            tools.setOnNewPage( null );
         }
     }
 

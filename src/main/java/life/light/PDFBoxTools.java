@@ -27,6 +27,7 @@ public class PDFBoxTools {
     private final float marginBottom = 20f;
     private final float width;
     private final PDFBoxBackground background;
+    private Runnable onNewPage;
 
     public PDFBoxTools(PDDocument document, String backgroundPath) throws IOException {
         this.document = document;
@@ -47,6 +48,13 @@ public class PDFBoxTools {
         contentStream = new PDPageContentStream( document, currentPage, APPEND, true, true );
         float marginTop = 20f;
         cursorY = A4.getHeight() - marginTop;
+        if (onNewPage != null) {
+            onNewPage.run();
+        }
+    }
+
+    public void setOnNewPage(Runnable onNewPage) {
+        this.onNewPage = onNewPage;
     }
 
     public void close() throws IOException {
