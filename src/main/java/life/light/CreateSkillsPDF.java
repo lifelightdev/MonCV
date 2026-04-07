@@ -160,7 +160,12 @@ public class CreateSkillsPDF {
     private static void addEmployer(PDFBoxTools tools, JsonNode skillsJson) throws IOException {
         JsonNode employerNode = skillsJson.get( EMPLOYER );
         if (employerNode != null && employerNode.isArray()) {
+            tools.addNewPage();
             for (JsonNode employer : employerNode) {
+                float employerHeaderHeight = calculateEmployerHeaderHeight( tools, employer );
+                if (tools.getCursorY() - employerHeaderHeight < tools.getMarginBottom()) {
+                    tools.addNewPage();
+                }
                 addEmployerInfo( tools, employer );
                 JsonNode customers = employer.get( "Clients" );
                 if (customers != null && customers.isArray()) {
@@ -168,6 +173,10 @@ public class CreateSkillsPDF {
                         addCustomer( tools, customer );
                     }
                 } else {
+                    float missionHeight = calculateMissionHeight( tools, employer );
+                    if (tools.getCursorY() - missionHeight < tools.getMarginBottom()) {
+                        tools.addNewPage();
+                    }
                     addMission( tools, employer );
                 }
             }
@@ -175,16 +184,34 @@ public class CreateSkillsPDF {
     }
 
     private static void addEmployerInfo(PDFBoxTools tools, JsonNode employer) throws IOException {
+        tools.addText( getEmployerHeaderText( employer ), 14, FONT_BOLD );
+    }
+
+    private static String getEmployerHeaderText(JsonNode employer) {
         String employerName = employer.has( NAME ) ? employer.get( NAME ).asText() : "";
         String functionalDomain = employer.has( FUNCTIONAL_DOMAIN ) ? employer.get( FUNCTIONAL_DOMAIN ).asText() : "";
         String text = EMPLOYER.toUpperCase() + " : " + employerName.toUpperCase();
         if (functionalDomain != null && !functionalDomain.isEmpty()) {
             text += " (" + functionalDomain.toUpperCase() + ")";
         }
-        tools.addText( text, 14, FONT_BOLD );
+        return text;
+    }
+
+    private static float calculateEmployerHeaderHeight(PDFBoxTools tools, JsonNode employer) throws IOException {
+        return tools.calculateTextHeight( getEmployerHeaderText( employer ), 14, FONT_BOLD );
     }
 
     private static void addCustomer(PDFBoxTools tools, JsonNode customer) throws IOException {
+        float estimatedHeight = 0;
+        if (customer.has( NAME ) && !customer.get( NAME ).asText().isEmpty()) {
+            estimatedHeight += tools.calculateTextHeight( CUSTOMER.toUpperCase() + " : " + customer.get( NAME ).asText().toUpperCase(), 12, FONT_BOLD );
+        }
+        estimatedHeight += calculateMissionHeight( tools, customer );
+
+        if (tools.getCursorY() - estimatedHeight < tools.getMarginBottom()) {
+            tools.addNewPage();
+        }
+
         if (customer.has( NAME ) && !customer.get( NAME ).asText().isEmpty()) {
             tools.addText( CUSTOMER.toUpperCase() + " : " + customer.get( NAME ).asText().toUpperCase(), 12, FONT_BOLD );
         }
@@ -198,6 +225,40 @@ public class CreateSkillsPDF {
         addLabelValue( tools, REALISATION, node.has( REALISATION ) ? node.get( REALISATION ).asText() : "", FONT_BOLD, 12 );
         addLabelValue( tools, TECHNICAL_ENVIRONMENT, node.has( TECHNICAL_ENVIRONMENT ) ? node.get( TECHNICAL_ENVIRONMENT ).asText() : "", FONT_BOLD, 12 );
         tools.setCursorY( tools.getCursorY() - 10 );
+    }
+
+    private static float calculateMissionHeight(PDFBoxTools tools, JsonNode node) throws IOException {
+        float height = 0;
+        // Période
+        if (node.has( PERIOD )) {
+            JsonNode periodNode = node.get( PERIOD );
+            if (periodNode.has( "Début" ) && periodNode.has( "Fin" )) {
+                JsonNode debut = periodNode.get( "Début" );
+                JsonNode fin = periodNode.get( "Fin" );
+                LocalDate dateDebut = LocalDate.of( debut.get( "Année" ).asInt(), debut.get( "Mois" ).asInt(), debut.get( "Jour" ).asInt() );
+                LocalDate dateFin = LocalDate.of( fin.get( "Année" ).asInt(), fin.get( "Mois" ).asInt(), fin.get( "Jour" ).asInt() );
+                Period differencePeriod = Period.between( dateDebut, dateFin );
+                String difference = getDifference( differencePeriod );
+                String periodText = PERIOD.toUpperCase() + " : de " + getNameOfTheMonth( debut ) + " " + debut.get( "Année" ).asText()
+                        + " à " + getNameOfTheMonth( fin ) + " " + fin.get( "Année" ).asText()
+                        + " (" + difference + ")";
+                height += tools.calculateTextHeight( periodText, 12, FONT_PLAIN );
+            }
+        }
+        // Labels
+        height += calculateLabelValueHeight( tools, POSITION_HELD, node.has( POSITION_HELD ) ? node.get( POSITION_HELD ).asText() : "", FONT_BOLD, 12 );
+        height += calculateLabelValueHeight( tools, CONTEXT, node.has( CONTEXT ) ? node.get( CONTEXT ).asText() : "", FONT_BOLD, 12 );
+        height += calculateLabelValueHeight( tools, REALISATION, node.has( REALISATION ) ? node.get( REALISATION ).asText() : "", FONT_BOLD, 12 );
+        height += calculateLabelValueHeight( tools, TECHNICAL_ENVIRONMENT, node.has( TECHNICAL_ENVIRONMENT ) ? node.get( TECHNICAL_ENVIRONMENT ).asText() : "", FONT_BOLD, 12 );
+        height += 10; // Espacement final
+        return height;
+    }
+
+    private static float calculateLabelValueHeight(PDFBoxTools tools, String label, String value, PDFont valueFont, float fontSize) throws IOException {
+        if (label != null && value != null) {
+            return tools.calculateTextHeight( label.toUpperCase() + " : " + value, fontSize, valueFont );
+        }
+        return 0;
     }
 
     private static void addPeriod(PDFBoxTools tools, JsonNode node) throws IOException {
