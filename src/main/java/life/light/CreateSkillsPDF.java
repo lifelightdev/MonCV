@@ -6,7 +6,6 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.Paragraph;
-import com.lowagie.text.Phrase;
 
 import java.lang.System.Logger;
 import java.time.LocalDate;
@@ -145,32 +144,34 @@ public class CreateSkillsPDF {
         JsonNode employerNode = skillsJson.get( EMPLOYER );
         if (employerNode != null && employerNode.isArray()) {
             for (JsonNode employer : employerNode) {
-                Paragraph paragraph = new Paragraph();
-                // Le texte restera toujours groupé sur une seule page
-                paragraph.setKeepTogether( true );
-                paragraph.setSpacingAfter( 2f );
-                paragraph.setSpacingBefore( 2f );
-                paragraph.setLeading( 16f );
-                getLineEmployer( employer, paragraph );
+                getLineEmployer( employer, document );
                 JsonNode customers = employer.get( "Clients" );
                 if (customers != null && customers.isArray()) {
                     for (JsonNode customer : customers) {
-                        addCustomer( paragraph, customer );
+                        addCustomer( document, customer );
                     }
                 } else {
-                    addMission( paragraph, employer );
+                    addMission( document, employer );
                 }
-                document.add( paragraph );
             }
         }
     }
 
-    private static void getLineEmployer(JsonNode employer, Paragraph paragraph) {
-        Phrase phrase = new Phrase();
-        phrase.add( new Chunk( EMPLOYER.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
-        phrase.add( new Chunk( EMPLOYER.substring( 1 ).toUpperCase() + " : ", subtitleFontBold ) );
-        getName( employer, phrase, subtitleFontBoldUp, subtitleFontBold );
-        paragraph.add( phrase );
+    private static void getLineEmployer(JsonNode employer, Document document) {
+        Paragraph paragraph = new Paragraph();
+        // Le texte restera toujours groupé sur une seule page
+        paragraph.setKeepTogether( true );
+        paragraph.setSpacingAfter( 2f );
+        paragraph.setSpacingBefore( 2f );
+        paragraph.setLeading( 16f );
+        paragraph.setKeepTogether( true );
+        paragraph.setSpacingAfter( 2f );
+        paragraph.setSpacingBefore( 2f );
+        paragraph.setLeading( 16f );
+        paragraph.add( new Chunk( EMPLOYER.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
+        paragraph.add( new Chunk( EMPLOYER.substring( 1 ).toUpperCase() + " : ", subtitleFontBold ) );
+        getName( employer, paragraph, subtitleFontBoldUp, subtitleFontBold );
+        document.add( paragraph );
     }
 
     private static void getName(JsonNode employer, Paragraph paragraph, Font subtitleFontBoldUp, Font subtitleFontBold) {
@@ -189,28 +190,14 @@ public class CreateSkillsPDF {
         }
     }
 
-    private static void getName(JsonNode employer, Phrase phrase, Font subtitleFontBoldUp, Font subtitleFontBold) {
-        String employerName = employer.get( NAME ).asText();
-        if (!employer.get( FUNCTIONAL_DOMAIN ).asText().isEmpty()) {
-            phrase.add( new Chunk( employerName.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
-            phrase.add( new Chunk( employerName.substring( 1 ).toUpperCase(), subtitleFontBold ) );
-
-            String functionalDomain = employer.get( FUNCTIONAL_DOMAIN ).asText();
-            phrase.add( new Chunk( " (" + functionalDomain.substring( 0, 1 ).toUpperCase(), subSubtitleFontBoldUp ) );
-            phrase.add( new Chunk( functionalDomain.substring( 1 ).toUpperCase(), subSubtitleFontBold ) );
-            phrase.add( new Chunk( ") \n", subSubtitleFontBoldUp ) );
-        } else {
-            phrase.add( new Chunk( employerName.substring( 0, 1 ).toUpperCase(), subtitleFontBoldUp ) );
-            phrase.add( new Chunk( employerName.substring( 1 ).toUpperCase(), subtitleFontBold ) );
-            addEmptyLine( phrase );
-        }
-    }
-
-    private static void addCustomer(Paragraph paragraph, JsonNode customer) {
+    private static void addCustomer(Document document, JsonNode customer) {
+        Paragraph paragraph = new Paragraph();
+        paragraph.setKeepTogether( true );
         if (!customer.get( NAME ).asText().isEmpty()) {
             addCutomerName( paragraph, customer );
         }
         addMission( paragraph, customer );
+        document.add( paragraph );
     }
 
     private static void addPeriod(Paragraph paragraph, JsonNode customer) {
@@ -251,6 +238,13 @@ public class CreateSkillsPDF {
             paragraph.add( new Chunk( (CUSTOMER + " : ").substring( 1 ).toUpperCase(), subSubtitleFontBold ) );
         }
         getName( customer, paragraph, Tools.subSubtitleFontBoldUp, Tools.subSubtitleFontBold );
+    }
+
+    private static void addMission(Document document, JsonNode customer) {
+        Paragraph paragraph = new Paragraph();
+        paragraph.setKeepTogether( true );
+        addMission( paragraph, customer );
+        document.add( paragraph );
     }
 
     private static void addMission(Paragraph paragraph, JsonNode customer) {
