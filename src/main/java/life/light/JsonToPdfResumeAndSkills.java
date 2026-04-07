@@ -3,6 +3,7 @@ package life.light;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
@@ -49,7 +50,12 @@ public class JsonToPdfResumeAndSkills {
             ut.addSource( createSkills( dossierCompetencesJson ) );
             String nameFileResumePDF = resumeJson.get( "Nom" ).asText() + " " + resumeJson.get( "Prénom" ).asText() + " - CV et Dossier de compétence.pdf";
             ut.setDestinationFileName( nameFileResumePDF );
-            ut.mergeDocuments( null );
+
+            try (FileOutputStream fos = new FileOutputStream( nameFileResumePDF )) {
+                ut.setDestinationStream( fos );
+                ut.mergeDocuments( null );
+            }
+
             logger.log( Level.INFO, "Fin de la génération des PDF" );
         } catch (Exception e) {
             logger.log( Level.ERROR, "Échec de la génération du CV", e );
