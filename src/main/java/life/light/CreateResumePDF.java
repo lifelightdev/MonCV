@@ -1,371 +1,177 @@
 package life.light;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.lowagie.text.Chunk;
-import com.lowagie.text.Document;
-import com.lowagie.text.Element;
-import com.lowagie.text.Font;
-import com.lowagie.text.FontFactory;
-import com.lowagie.text.Image;
-import com.lowagie.text.List;
-import com.lowagie.text.ListItem;
-import com.lowagie.text.PageSize;
-import com.lowagie.text.Paragraph;
-import com.lowagie.text.Phrase;
-import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.PdfPCell;
-import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfWriter;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
-import java.util.Objects;
+
+import static life.light.PDFBoxTools.FONT_BOLD;
+import static life.light.PDFBoxTools.FONT_PLAIN;
 
 public class CreateResumePDF {
 
-    private static final Logger logger = System.getLogger(CreateResumePDF.class.getName());
-    public static final int FONT_SIZE_NORMAL = 12;
-
-    static Font titleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 24, Font.BOLD);
-    static Font subtitleFontBold = FontFactory.getFont(FontFactory.TIMES_ROMAN, 14, Font.BOLD);
-    static Font subtitleFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 14);
-    static Font normalFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL);
-    static Font normalFontBold = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL, Font.BOLD);
-    static Font normalFontUnderline = FontFactory.getFont(FontFactory.TIMES_ROMAN, FONT_SIZE_NORMAL, Font.UNDERLINE);
-    static Font emptyLineFont = FontFactory.getFont(FontFactory.TIMES_ROMAN, 6);
-    static Image icone;
-
-    static {
-        try {
-            icone = addImage("images" + java.io.File.separator + "Puce1.png", 8);
-        } catch (Exception e) {
-            // En test, l'image peut ne pas exister, on ignore
-            icone = null;
-        }
-    }
+    private static final Logger logger = System.getLogger( CreateResumePDF.class.getName() );
 
     static void createResume(JsonNode resumeJson) {
-        // Les valeurs sont en "points" (72 points = 1 pouce = 2,54 cm)
-        // Ici, on met environ 1 cm de marge partout (28 points).
-        float margeGauche = 28f;
-        float margeDroite = 28f;
-        float margeHaut = 20f;
-        float margeBas = 20f;
+        String nameFileCVPDF = resumeJson.get( "Nom" ).asText() + " " + resumeJson.get( "Prénom" ).asText() + " - CV.pdf";
+        try (PDDocument document = new PDDocument()) {
+            PDFBoxTools tools = new PDFBoxTools( document, "images/Fond.png" );
 
-        Document document = new Document(PageSize.A4, margeGauche, margeDroite, margeHaut, margeBas);
+            addHeader( resumeJson, tools );
+            addSubHeader( resumeJson, tools );
+            addBody( resumeJson, tools );
 
-        try {
-            String nameFileCVPDF = resumeJson.get("Nom").asText() + " " + resumeJson.get("Prénom").asText() + " - CV.pdf";
-            PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(nameFileCVPDF));
-
-            // On attache l'image de fond
-            try {
-                BackgroundEvent event = new BackgroundEvent("images/Fond.png");
-                writer.setPageEvent(event);
-            } catch (Exception e) {
-                // Fond optionnel pour les tests
-            }
-
-            document.open();
-            addHeader(resumeJson, document);
-            addSubHeader(resumeJson, document);
-            addBody(resumeJson, document);
+            tools.close();
+            document.save( nameFileCVPDF );
         } catch (Exception e) {
-            logger.log(Level.ERROR, "Échec de la génération du CV", e.getMessage());
-        } finally {
-            if (document.isOpen()) {
-                // Fermer le document
-                document.close();
-            }
+            logger.log( Level.ERROR, "Échec de la génération du CV", e );
         }
     }
 
-    static void addBody(JsonNode resumeJson, Document document) {
-        //Création d'une table à 2 colonnes
-        PdfPTable bodyTable = getPdfPTable();
-
-        Paragraph infoPhraseLeft = new Paragraph();
-        infoPhraseLeft.add(addCompetences(resumeJson));
-        infoPhraseLeft.add(addLangues(resumeJson));
-        infoPhraseLeft.add(addFormations(resumeJson));
-        PdfPCell textCellLeft = new PdfPCell(infoPhraseLeft);
-        textCellLeft.setBorder(Rectangle.NO_BORDER);
-        textCellLeft.setVerticalAlignment(Element.ALIGN_TOP);
-        textCellLeft.setLeading(0, 1.2f);
-        bodyTable.addCell(textCellLeft);
-
-        Phrase infoPhraseRight = new Phrase();
-        infoPhraseRight.add(addExperiences(resumeJson));
-        PdfPCell textCellRight = new PdfPCell(infoPhraseRight);
-        textCellRight.setBorder(Rectangle.NO_BORDER);
-        textCellRight.setHorizontalAlignment(Element.ALIGN_JUSTIFIED);
-        textCellRight.setVerticalAlignment(Element.ALIGN_TOP);
-        textCellRight.setLeading(0, 1.2f);
-        bodyTable.addCell(textCellRight);
-
-        // Ajouter la table au document
-        document.add(bodyTable);
-    }
-
-    private static PdfPTable getPdfPTable() {
-        // On définit la largeur relative des colonnes (ex : 1/3 pour la photo, 2/3 pour le texte).
-        PdfPTable bodyTable = new PdfPTable(2);
-        bodyTable.setWidthPercentage(100);
-        bodyTable.setWidths(new float[]{1, 2});
-        return bodyTable;
-    }
-
-    static void addHeader(JsonNode resumeJson, Document document) {
-        PdfPTable headerTable = getPdfPTable();
-
-        Image photo = null;
+    static void addHeader(JsonNode resumeJson, PDFBoxTools tools) throws IOException {
+        // Photo à gauche (approximate coordinate)
         try {
-            photo = addImage("Ma_Photo.jpg", 70);
+            PDImageXObject photo = PDImageXObject.createFromFile( "Ma_Photo.jpg", tools.getDocument() );
+            float photoSize = 70;
+            tools.getContentStream().drawImage( photo, 28, tools.getCursorY() - photoSize, photoSize, photoSize );
         } catch (Exception e) {
-            // Photo optionnelle pour les tests
-            logger.log(Level.ERROR, "La photo du CV n'a pas été trouvée", e.getMessage());
+            logger.log( Level.ERROR, "La photo du CV n'a pas été trouvée" );
         }
 
-        PdfPCell photoCell = new PdfPCell(photo);
-        photoCell.setBorder(Rectangle.NO_BORDER);
-        photoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        photoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        headerTable.addCell(photoCell);
+        // Texte à droite de la photo
+        float textStartX = 110;
+        float originalY = tools.getCursorY();
+        tools.setCursorY( originalY - 10 );
+        tools.addText( resumeJson.get( "Prénom" ).asText() + " " + resumeJson.get( "Nom" ).asText(), 24, FONT_BOLD, textStartX, 400 );
 
-        Phrase infoPhrase = new Phrase();
-        infoPhrase.add(new Chunk(resumeJson.get("Prénom").asText() + " " + resumeJson.get("Nom").asText() + "\n ", titleFont));
-        JsonNode titre = resumeJson.get("Titre");
-        if (titre != null && titre.isArray()) {
+        JsonNode titre = resumeJson.get( "Titre" );
+        if (titre != null && titre.isArray() && !titre.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
             for (int i = 0; i < titre.size(); i++) {
-                JsonNode exp = titre.get(i);
-                infoPhrase.add(new Chunk(" " + exp.asText(), subtitleFontBold));
-                if (i < titre.size() - 1) {
-                    infoPhrase.add(new Chunk("  / ", subtitleFontBold));
-                }
+                sb.append( titre.get( i ).asText() );
+                if (i < titre.size() - 1) sb.append( " " );
             }
-        }
-        infoPhrase.add(new Chunk("\n" + Objects.requireNonNull(titre).asText(), subtitleFontBold));
-        JsonNode sousTitre = resumeJson.get("Sous titre");
-        if (sousTitre != null && sousTitre.isArray()) {
-            for (int i = 0; i < sousTitre.size(); i++) {
-                JsonNode exp = sousTitre.get(i);
-                String label = exp.asText();
-                Image icone = addImage("images" + File.separator + label + ".png", FONT_SIZE_NORMAL);
-                if (icone != null) {
-                    infoPhrase.add(new Chunk(icone, -2, -2, true));
-                }
-                infoPhrase.add(new Chunk(" " + label, subtitleFontBold));
-                if (i < sousTitre.size() - 1) {
-                    infoPhrase.add(new Chunk(" /  ", subtitleFontBold));
-                }
-            }
+            tools.addText( sb.toString(), 14, FONT_BOLD, textStartX, 400 );
         }
 
-        PdfPCell textCell = new PdfPCell(infoPhrase);
-        textCell.setBorder(Rectangle.NO_BORDER);
-        textCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        textCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        textCell.setPaddingLeft(10); // Petit espace entre la photo et le texte
-        headerTable.addCell(textCell);
-
-        // Ajouter la table au document
-        document.add(headerTable);
+        tools.setCursorY( originalY - 80 ); // Descendre après le header
     }
 
-    static void addSubHeader(JsonNode resumeJson, Document document) {
-        //Création d'une table à 2 colonnes
-        // On définit la largeur relative des colonnes (ex : 1/3 pour la photo, 2/3 pour le texte)
-        com.lowagie.text.pdf.PdfPTable subHeaderTable = getPdfPTable();
+    static void addSubHeader(JsonNode resumeJson, PDFBoxTools tools) throws IOException {
+        float leftColWidth = 150;
+        float startY = tools.getCursorY();
 
-        Phrase infoPhraseLeft = new Phrase();
-        infoPhraseLeft.add(addIconeFirst("Téléphone", resumeJson));
-        infoPhraseLeft.add(new Chunk("\n ", emptyLineFont));
-        infoPhraseLeft.add(addIconeFirst("Email", resumeJson));
-        infoPhraseLeft.add(new Chunk("\n ", emptyLineFont));
-        infoPhraseLeft.add(addIconeFirst("GitHub", resumeJson));
-        infoPhraseLeft.add(new Chunk("\n ", emptyLineFont));
-        infoPhraseLeft.add(addIconeFirst("LinkedIn", resumeJson));
-        infoPhraseLeft.add(new Chunk("\n ", emptyLineFont));
-        PdfPCell textCellLeft = new PdfPCell(infoPhraseLeft);
-        textCellLeft.setBorder(Rectangle.NO_BORDER);
-        textCellLeft.setHorizontalAlignment(Element.ALIGN_JUSTIFIED);
-        textCellLeft.setVerticalAlignment(Element.ALIGN_TOP);
-        textCellLeft.setLeading(0, 1.5f);
-        subHeaderTable.addCell(textCellLeft);
+        // Colonne gauche : Contact
+        tools.addText( "Téléphone: " + (resumeJson.has( "Téléphone" ) ? resumeJson.get( "Téléphone" ).asText() : ""), 10, FONT_PLAIN, 28, leftColWidth );
+        tools.addText( "Email: " + (resumeJson.has( "Email" ) ? resumeJson.get( "Email" ).asText() : ""), 10, FONT_PLAIN, 28, leftColWidth );
+        tools.addText( "GitHub: " + (resumeJson.has( "GitHub" ) ? resumeJson.get( "GitHub" ).asText() : ""), 10, FONT_PLAIN, 28, leftColWidth );
 
-        Paragraph paragraph = new Paragraph(resumeJson.get("Présentation").asText(), subtitleFont);
-        PdfPCell textCellRight = new PdfPCell(paragraph);
-        textCellRight.setBorder(Rectangle.NO_BORDER);
-        textCellRight.setHorizontalAlignment(Element.ALIGN_JUSTIFIED);
-        textCellRight.setVerticalAlignment(Element.ALIGN_TOP);
-        textCellRight.setLeading(0, 1.3f);
-        subHeaderTable.addCell(textCellRight);
+        // Colonne droite : Présentation
+        float rightColX = 180;
+        tools.setCursorY( startY );
+        tools.addText( resumeJson.has( "Présentation" ) ? resumeJson.get( "Présentation" ).asText() : "", 12, FONT_PLAIN, rightColX, 380 );
 
-        document.add(subHeaderTable);
-
+        tools.setCursorY( tools.getCursorY() - 10 );
     }
 
-    static List addCompetences(JsonNode cvJson) {
-        List listCompetences = new List(List.UNORDERED);
-        listCompetences.setListSymbol(new Chunk(""));
-        ListItem item = new ListItem();
-        item.add(new Chunk("Compétences".toUpperCase() + " ", subtitleFontBold));
-        item.add(new Chunk("\n \n ", emptyLineFont));
-        JsonNode competences = cvJson.get("Compétences");
+    static void addBody(JsonNode resumeJson, PDFBoxTools tools) throws IOException {
+        float startY = tools.getCursorY();
+        float leftColX = 28;
+        float leftColWidth = 180;
+        float rightColX = 220;
+        float rightColWidth = 340;
+
+        // Colonne Gauche: Compétences, Langues, Formations
+        tools.addText( "COMPÉTENCES", 14, FONT_BOLD, leftColX, leftColWidth );
+        addCompetences( resumeJson, tools, leftColX, leftColWidth );
+
+        tools.setCursorY( tools.getCursorY() - 10 );
+        tools.addText( "LANGUES", 14, FONT_BOLD, leftColX, leftColWidth );
+        addLangues( resumeJson, tools, leftColX, leftColWidth );
+
+        tools.setCursorY( tools.getCursorY() - 10 );
+        tools.addText( "FORMATIONS", 14, FONT_BOLD, leftColX, leftColWidth );
+        addFormations( resumeJson, tools, leftColX, leftColWidth );
+
+        float leftColEndY = tools.getCursorY();
+
+        // Colonne Droite: Expériences
+        tools.setCursorY( startY );
+        tools.addText( "EXPÉRIENCES", 14, FONT_BOLD, rightColX, rightColWidth );
+        addExperiences( resumeJson, tools, rightColX, rightColWidth );
+
+        // On s'assure que le curseur est bien en dessous de la colonne la plus longue
+        tools.setCursorY( Math.min( leftColEndY, tools.getCursorY() ) );
+    }
+
+    private static void addCompetences(JsonNode resumeJson, PDFBoxTools tools, float x, float width) throws IOException {
+        JsonNode competences = resumeJson.get( "Compétences" );
         if (competences != null && competences.isArray()) {
-            for (int i = 0; i < competences.size(); i++) {
-                JsonNode competence = competences.get(i);
-                Paragraph paragraph = new Paragraph();
-                paragraph.add(new Chunk(icone, 0, 0, true));
-                for (int j = 0; j < competence.size(); j++) {
-                    JsonNode exp = competence.get(j);
-                    Font font = normalFont;
-                    if (exp.get("EnGras").asBoolean()) {
-                        font = normalFontBold;
-                    }
-                    paragraph.add(new Chunk(" " + exp.get("Description").asText(), font));
-                    if (j < competence.size() - 1) {
-                        paragraph.add(new Chunk(",", font));
-                    }
-                }
-                item.add(paragraph);
-                item.add(new Chunk("\n ", emptyLineFont));
-            }
-        }
-        listCompetences.add(item);
-        return listCompetences;
-    }
-
-    static List addFormations(JsonNode resumeJson) {
-        List listFormations = new List(List.UNORDERED);
-        listFormations.setListSymbol(new Chunk(""));
-        ListItem item = new ListItem();
-        item.add(new Chunk("Formations".toUpperCase(), subtitleFontBold));
-        item.add(new Chunk("\n \n ", emptyLineFont));
-        JsonNode competences = resumeJson.get("Formations");
-        if (competences != null && competences.isArray()) {
-            for (int i = 0; i < competences.size(); i++) {
-                JsonNode formation = competences.get(i);
-                Paragraph paragraph = new Paragraph();
-                paragraph.add(new Chunk(icone, 0, 0, true));
-                paragraph.add(new Chunk(" " + formation.get("Titre").asText(), normalFont));
-                paragraph.add(new Chunk(" \n ", normalFont));
-                paragraph.add(new Chunk("   " + formation.get("Année").asText(), normalFont));
-                item.add(paragraph);
-                item.add(new Chunk("\n ", emptyLineFont));
-            }
-        }
-        listFormations.add(item);
-        return listFormations;
-    }
-
-    static List addLangues(JsonNode resumeJson) {
-        List listLangues = new List(List.UNORDERED);
-        listLangues.setListSymbol(new Chunk(""));
-        ListItem item = new ListItem();
-        item.add(new Chunk("Langues".toUpperCase(), subtitleFontBold));
-        item.add(new Chunk("\n \n ", emptyLineFont));
-        JsonNode langues = resumeJson.get("Langues");
-        if (langues != null && langues.isArray()) {
-            for (int i = 0; i < langues.size(); i++) {
-                JsonNode langue = langues.get(i);
-                Paragraph paragraph = new Paragraph();
-                Image drapeau = addImage("images" + java.io.File.separator + langue.get("Nom").asText() + ".png", 16);
-                paragraph.add(new Chunk(drapeau, 0, 0, true));
-                paragraph.add(new Chunk(" " + langue.get("Niveau").asText(), normalFont));
-                item.add(paragraph);
-                item.add(new Chunk("\n ", emptyLineFont));
-            }
-        }
-        listLangues.add(item);
-        return listLangues;
-    }
-
-    static List addExperiences(JsonNode resumeJson) {
-        List listExperiences = new List(List.UNORDERED);
-        listExperiences.setListSymbol(new Chunk(""));
-        ListItem item = new ListItem();
-        item.add(new Chunk("Expériences".toUpperCase(), subtitleFontBold));
-        item.add(new Chunk("\n ", emptyLineFont));
-        JsonNode experiences = resumeJson.get("Experiences");
-        if (experiences != null && experiences.isArray()) {
-            for (int i = 0; i < experiences.size(); i++) {
-                JsonNode experience = experiences.get(i);
-                Paragraph paragraph = new Paragraph();
-                paragraph.add(new Chunk("\n ", emptyLineFont));
-                paragraph.add(new Chunk(experience.get("Année").asText() + " ", subtitleFont));
-                Image logo = addImage("images" + java.io.File.separator + experience.get("Entreprise").asText() + ".png", experience.get("Size").floatValue());
-                paragraph.add(new Chunk(logo, 0, experience.get("Hauteur").floatValue(), false));
-                paragraph.add(new Chunk(" (" + experience.get("Domaine").asText() + ")", normalFont));
-                item.add(paragraph);
-                item.add(new Chunk("\n ", emptyLineFont));
-                List listFonctions = new List(List.UNORDERED);
-                listFonctions.setListSymbol(new Chunk(""));
-                ListItem itemFonctions = new ListItem();
-                JsonNode fonctions = experience.get("Fonctions");
-                if (fonctions != null && fonctions.isArray()) {
-                    for (int j = 0; j < fonctions.size(); j++) {
-                        JsonNode fonction = fonctions.get(j);
-                        Paragraph paragraphFonction = new Paragraph();
-                        paragraphFonction.add(new Chunk(icone, 0, 0, true));
-                        paragraphFonction.add(new Chunk(" " + fonction.get("Titre").asText(), normalFontUnderline));
-                        if (!fonction.get("Sous titre").asText().isEmpty()) {
-                            paragraphFonction.add(new Chunk(" - " + fonction.get("Sous titre").asText(), normalFont));
+            for (JsonNode group : competences) {
+                StringBuilder sb = new StringBuilder();
+                if (group.isArray()) {
+                    for (int i = 0; i < group.size(); i++) {
+                        JsonNode desc = group.get( i ).get( "Description" );
+                        if (desc != null) {
+                            sb.append( desc.asText() );
                         }
-                        itemFonctions.add(paragraphFonction);
-                        itemFonctions.add(new Chunk("\n", emptyLineFont));
+                        if (i < group.size() - 1) sb.append( ", " );
+                    }
+                    tools.addText( "- " + sb, 10, FONT_PLAIN, x, width );
+                }
+            }
+        }
+    }
 
-                        List listTaches = new List(List.UNORDERED);
-                        listTaches.setListSymbol(new Chunk(""));
-                        ListItem itemTaches = new ListItem();
-                        JsonNode taches = fonction.get("Tâches");
+    private static void addLangues(JsonNode resumeJson, PDFBoxTools tools, float x, float width) throws IOException {
+        JsonNode langues = resumeJson.get( "Langues" );
+        if (langues != null && langues.isArray()) {
+            for (JsonNode langue : langues) {
+                String nom = langue.has( "Nom" ) ? langue.get( "Nom" ).asText() : "";
+                String niveau = langue.has( "Niveau" ) ? langue.get( "Niveau" ).asText() : "";
+                tools.addText( "- " + nom + " : " + niveau, 10, FONT_PLAIN, x, width );
+            }
+        }
+    }
+
+    private static void addFormations(JsonNode resumeJson, PDFBoxTools tools, float x, float width) throws IOException {
+        JsonNode formations = resumeJson.get( "Formations" );
+        if (formations != null && formations.isArray()) {
+            for (JsonNode formation : formations) {
+                String titre = formation.has( "Titre" ) ? formation.get( "Titre" ).asText() : "";
+                String annee = formation.has( "Année" ) ? formation.get( "Année" ).asText() : "";
+                tools.addText( "- " + titre + " (" + annee + ")", 10, FONT_PLAIN, x, width );
+            }
+        }
+    }
+
+    private static void addExperiences(JsonNode resumeJson, PDFBoxTools tools, float x, float width) throws IOException {
+        JsonNode experiences = resumeJson.get( "Experiences" );
+        if (experiences != null && experiences.isArray()) {
+            for (JsonNode exp : experiences) {
+                String annee = exp.has( "Année" ) ? exp.get( "Année" ).asText() : "";
+                String entreprise = exp.has( "Entreprise" ) ? exp.get( "Entreprise" ).asText() : "";
+                tools.addText( annee + " - " + entreprise, 12, FONT_BOLD, x, width );
+                JsonNode fonctions = exp.get( "Fonctions" );
+                if (fonctions != null && fonctions.isArray()) {
+                    for (JsonNode fonction : fonctions) {
+                        String titre = fonction.has( "Titre" ) ? fonction.get( "Titre" ).asText() : "";
+                        tools.addText( "  " + titre, 10, FONT_BOLD, x, width );
+                        JsonNode taches = fonction.get( "Tâches" );
                         if (taches != null && taches.isArray()) {
-                            for (int k = 0; k < taches.size(); k++) {
-                                JsonNode tache = taches.get(k);
-                                Paragraph paragraphTache = new Paragraph();
-                                Font font = normalFont;
-                                if (tache.get("EnGras").asBoolean()) {
-                                    font = normalFontBold;
+                            for (JsonNode tache : taches) {
+                                if (tache.has( "Description" )) {
+                                    tools.addText( "    . " + tache.get( "Description" ).asText(), 10, FONT_PLAIN, x, width );
                                 }
-                                paragraphTache.add(new Chunk("    - " + tache.get("Description").asText(), font));
-                                itemTaches.add(paragraphTache);
                             }
                         }
-                        listTaches.add(itemTaches);
-                        itemFonctions.add(listTaches);
                     }
                 }
-                listFonctions.add(itemFonctions);
-                item.add(listFonctions);
+                tools.setCursorY( tools.getCursorY() - 5 );
             }
         }
-        listExperiences.add(item);
-        return listExperiences;
-    }
-
-    static Paragraph addIconeFirst(String image, JsonNode resumeJson) {
-        Paragraph paragraph = new Paragraph();
-        Image icone = addImage("images" + File.separator + image + ".png", FONT_SIZE_NORMAL);
-        if (icone != null) {
-            paragraph.add(new Chunk(icone, 0, 0, true));
-        }
-        paragraph.add(new Chunk(" " + resumeJson.get(image).asText(), normalFont));
-        return paragraph;
-    }
-
-    static Image addImage(String imagePath, float size) {
-        try {
-            Image image = Image.getInstance(imagePath);
-            // Ajuster la taille (ex: 100x100 pixels)
-            image.scaleAbsolute(size, size);
-            image.scaleToFit(image.getScaledWidth(), image.getScaledHeight());
-
-            return image;
-        } catch (Exception e) {
-            logger.log(Level.ERROR, "L'image " + imagePath + " n'a pas été trouvée, génération du CV sans cette image", e.getMessage());
-        }
-        return null;
     }
 }
