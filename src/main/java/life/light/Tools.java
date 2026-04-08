@@ -46,7 +46,7 @@ public class Tools {
         return "images/Fond.png";
     }
 
-    public void ajouterNumerotation(PDDocument document) throws IOException {
+    static void ajouterNumerotation(PDDocument document) throws IOException {
         int totalPages = document.getNumberOfPages();
         float marginBottom = 30; // Distance du bas de la page
 

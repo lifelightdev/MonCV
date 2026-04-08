@@ -1,8 +1,10 @@
 package life.light;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.System.Logger;
@@ -54,13 +56,24 @@ public class JsonToPdfResumeAndSkills {
             try (FileOutputStream fos = new FileOutputStream( nameFileResumePDF )) {
                 ut.setDestinationStream( fos );
                 ut.mergeDocuments( null );
+
             }
+
+            // 1. Charger le JSON (Jackson)
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode monJson = mapper.readTree( new File( "important.json" ) );
+
+            // 2. Appeler le générateur
+            CVGenerator generator = new CVGenerator();
+            generator.generatePDFFromWord( "CV.docx", "MonCV_Final.pdf", monJson );
+
 
             logger.log( Level.INFO, "Fin de la génération des PDF" );
         } catch (Exception e) {
             logger.log( Level.ERROR, "Échec de la génération du CV", e );
             System.exit( 1 );
         }
+        System.exit( 0 );
     }
 
 }
