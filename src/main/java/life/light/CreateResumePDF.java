@@ -11,13 +11,14 @@ import java.lang.System.Logger.Level;
 
 import static life.light.PDFBoxTools.FONT_BOLD;
 import static life.light.PDFBoxTools.FONT_PLAIN;
+import static life.light.Tools.FONT_SIZE;
 import static life.light.Tools.getBackgroundPath;
 import static org.apache.pdfbox.pdmodel.common.PDRectangle.A4;
 
 public class CreateResumePDF {
 
     private static final Logger logger = System.getLogger( CreateResumePDF.class.getName() );
-    public static final int FONT_SIZE = 14;
+
     public static final int MARGIN_X = 20;
 
     static String createResume(JsonNode resumeJson) {
@@ -57,26 +58,23 @@ public class CreateResumePDF {
         tools.addCenteredText( resumeJson.get( "Prénom" ).asText() + " " + resumeJson.get( "Nom" ).asText(), 25, FONT_BOLD, A4.getWidth() + textStartX );
 
         JsonNode title = resumeJson.get( "Titre" );
+        isNotEmpty( tools, textStartX, title );
+
+        JsonNode subTitle = resumeJson.get( "Sous titre" );
+        isNotEmpty( tools, textStartX, subTitle );
+
+        tools.setCursorY( originalY - 90 ); // Descendre après le header
+    }
+
+    private static void isNotEmpty(PDFBoxTools tools, float textStartX, JsonNode title) throws IOException {
         if (title != null && title.isArray() && !title.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < title.size(); i++) {
                 sb.append( title.get( i ).asText() );
                 if (i < title.size() - 1) sb.append( " / " );
             }
-            tools.addCenteredText( sb.toString(), 14, FONT_BOLD, A4.getWidth() + textStartX );
+            tools.addCenteredText( sb.toString(), FONT_SIZE, FONT_BOLD, A4.getWidth() + textStartX );
         }
-
-        JsonNode subTitle = resumeJson.get( "Sous titre" );
-        if (subTitle != null && subTitle.isArray() && !subTitle.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < subTitle.size(); i++) {
-                sb.append( subTitle.get( i ).asText() );
-                if (i < subTitle.size() - 1) sb.append( " / " );
-            }
-            tools.addCenteredText( sb.toString(), 14, FONT_BOLD, A4.getWidth() + textStartX );
-        }
-
-        tools.setCursorY( originalY - 90 ); // Descendre après le header
     }
 
     static void addSubHeader(JsonNode resumeJson, PDFBoxTools tools) throws IOException {

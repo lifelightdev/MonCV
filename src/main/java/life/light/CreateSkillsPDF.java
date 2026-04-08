@@ -3,8 +3,6 @@ package life.light;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.font.PDFont;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,6 +16,9 @@ import static life.light.Tools.CUSTOMER;
 import static life.light.Tools.DAY;
 import static life.light.Tools.EMPLOYER;
 import static life.light.Tools.FIRST_NAME;
+import static life.light.Tools.FONT_BOLD;
+import static life.light.Tools.FONT_PLAIN;
+import static life.light.Tools.FONT_SIZE;
 import static life.light.Tools.FUNCTIONAL_DOMAIN;
 import static life.light.Tools.FUNCTIONAL_DOMAINS;
 import static life.light.Tools.MONTH;
@@ -26,19 +27,18 @@ import static life.light.Tools.OCCUPIED_POSITIONS;
 import static life.light.Tools.PERIOD;
 import static life.light.Tools.POSITION_HELD;
 import static life.light.Tools.REALISATION;
+import static life.light.Tools.TECHNICALS;
 import static life.light.Tools.TECHNICAL_ENVIRONMENT;
 import static life.light.Tools.TECHNICAL_KEYS;
-import static life.light.Tools.TECHNIQUES;
 import static life.light.Tools.YEAR;
 import static life.light.Tools.YEAR_OF_EXPERIENCE;
 import static life.light.Tools.getNameOfTheMonth;
+import static org.apache.pdfbox.pdmodel.common.PDRectangle.A4;
 
 public class CreateSkillsPDF {
 
     private static final Logger logger = System.getLogger( CreateSkillsPDF.class.getName() );
 
-    public static final PDFont FONT_PLAIN = new PDType1Font( Standard14Fonts.FontName.TIMES_ROMAN );
-    public static final PDFont FONT_BOLD = new PDType1Font( Standard14Fonts.FontName.TIMES_BOLD );
 
     static String createSkills(JsonNode skillsJson) {
         String nameFileSkillsPDF = skillsJson.get( NAME ).asText() + " " + skillsJson.get( FIRST_NAME ).asText() + " - Dossier de compétence.pdf";
@@ -49,7 +49,6 @@ public class CreateSkillsPDF {
             addGeneralInformation( tools, skillsJson );
             // Domaine de compétences
             addExpertise( tools, skillsJson );
-            tools.setCursorY( tools.getCursorY() - 10 );
             addEmployer( tools, skillsJson );
 
             tools.close();
@@ -63,42 +62,57 @@ public class CreateSkillsPDF {
     }
 
     private static void addTitle(PDFBoxTools tools) throws IOException {
-        tools.addCenteredText( "Dossier de compétence", 25, FONT_BOLD );
         tools.setCursorY( tools.getCursorY() - 20 );
+        tools.addCenteredText( "Dossier de compétence", 25, FONT_BOLD );
+        tools.setCursorY( tools.getCursorY() - 10 );
     }
 
     private static void addSubtitle(PDFBoxTools tools, String title) throws IOException {
         if (title != null) {
-            tools.addText( title.toUpperCase(), 16, FONT_BOLD );
+            tools.addText( title.toUpperCase(), FONT_SIZE + 2, FONT_BOLD );
             tools.setCursorY( tools.getCursorY() - 5 );
         }
     }
 
-    private static void addLabelValue(PDFBoxTools tools, String label, String value, PDFont valueFont, float fontSize) throws IOException {
+    private static void addLabelValue(PDFBoxTools tools, String label, String value, PDFont valueFont, float fontSize, Boolean isMultiLine) throws IOException {
         if (label != null && value != null) {
-            tools.addText( label.toUpperCase() + " : " + value, fontSize, valueFont );
+            if (isMultiLine) {
+                tools.addText( label + " : ", fontSize, FONT_BOLD );
+                StringBuilder ligne = new StringBuilder();
+                for (Character ch : value.toCharArray()) {
+                    if (ch == '\n') {
+                        tools.addText( ligne.toString(), fontSize, FONT_PLAIN );
+                        ligne = new StringBuilder();
+                    } else {
+                        ligne.append( ch );
+                    }
+                }
+                tools.addText( ligne.toString(), fontSize, FONT_PLAIN );
+            } else {
+                tools.addText( label + " : " + value, fontSize, valueFont );
+            }
         }
     }
 
     private static void addGeneralInformation(PDFBoxTools tools, JsonNode skillsJson) throws IOException {
         addSubtitle( tools, "Informations générales" );
 
-        addLabelValue( tools, NAME, skillsJson.has( NAME ) ? skillsJson.get( NAME ).asText().toUpperCase() : "", FONT_BOLD, 12 );
-        addLabelValue( tools, FIRST_NAME, skillsJson.has( FIRST_NAME ) ? skillsJson.get( FIRST_NAME ).asText() : "", FONT_BOLD, 12 );
+        addLabelValue( tools, NAME, skillsJson.has( NAME ) ? skillsJson.get( NAME ).asText().toUpperCase() : "", FONT_BOLD, FONT_SIZE, false );
+        addLabelValue( tools, FIRST_NAME, skillsJson.has( FIRST_NAME ) ? skillsJson.get( FIRST_NAME ).asText() : "", FONT_BOLD, FONT_SIZE, false );
 
         String startExp = "Début d'expérience";
         if (skillsJson.has( startExp )) {
             JsonNode startExpNode = skillsJson.get( startExp );
             LocalDate dateExp = LocalDate.of( startExpNode.get( YEAR ).asInt(), startExpNode.get( MONTH ).asInt(), startExpNode.get( DAY ).asInt() );
             Period difference = Period.between( dateExp, LocalDate.now() );
-            addLabelValue( tools, YEAR_OF_EXPERIENCE, difference.getYears() + " ans", FONT_BOLD, 12 );
+            addLabelValue( tools, YEAR_OF_EXPERIENCE, difference.getYears() + " ans", FONT_BOLD, FONT_SIZE, false );
         }
-
-        addLabelValue( tools, POSITION_HELD, skillsJson.has( POSITION_HELD ) ? skillsJson.get( POSITION_HELD ).asText() : "", FONT_BOLD, 12 );
 
         addTechExperience( tools, skillsJson );
 
-        addLabelValue( tools, AVAILABILITY, skillsJson.has( AVAILABILITY ) ? skillsJson.get( AVAILABILITY ).asText() : "", FONT_BOLD, 12 );
+        addLabelValue( tools, POSITION_HELD, skillsJson.has( POSITION_HELD ) ? skillsJson.get( POSITION_HELD ).asText() : "", FONT_BOLD, FONT_SIZE, false );
+
+        addLabelValue( tools, AVAILABILITY, skillsJson.has( AVAILABILITY ) ? skillsJson.get( AVAILABILITY ).asText() : "", FONT_BOLD, FONT_SIZE, false );
 
         tools.setCursorY( tools.getCursorY() - 10 );
     }
@@ -114,9 +128,9 @@ public class CreateSkillsPDF {
                 JsonNode startAngular = skillsJson.get( "Début Angular" );
                 LocalDate dateAngular = LocalDate.of( startAngular.get( "Année" ).asInt(), startExp.get( "Mois" ).asInt(), startExp.get( "Jour" ).asInt() );
                 Period diffAngular = Period.between( dateAngular, LocalDate.now() );
-                tools.addText( "Java (" + diffJava.getYears() + " ans) / Angular (" + diffAngular.getYears() + " ans)", 12, FONT_PLAIN );
+                tools.addText( "Java (" + diffJava.getYears() + " ans) / Angular (" + diffAngular.getYears() + " ans)", FONT_SIZE, FONT_PLAIN );
             } else {
-                tools.addText( "Java (" + diffJava.getYears() + " ans)", 12, FONT_PLAIN );
+                tools.addText( "Java (" + diffJava.getYears() + " ans)", FONT_SIZE, FONT_PLAIN );
             }
         }
     }
@@ -124,7 +138,7 @@ public class CreateSkillsPDF {
     private static void addExpertise(PDFBoxTools tools, JsonNode skillsJson) throws IOException {
         addSubtitle( tools, "Domaine de compétences" );
 
-        tools.addText( TECHNIQUES.toUpperCase() + " :", 12, FONT_BOLD );
+        tools.addText( TECHNICALS.toUpperCase() + " :", FONT_SIZE, FONT_BOLD );
 
         for (String key : TECHNICAL_KEYS) {
             techniques( tools, skillsJson, key );
@@ -133,12 +147,12 @@ public class CreateSkillsPDF {
         tools.setCursorY( tools.getCursorY() - 10 );
 
         // Poste
-        tools.addText( OCCUPIED_POSITIONS.toUpperCase(), 12, FONT_BOLD );
+        tools.addText( OCCUPIED_POSITIONS.toUpperCase(), FONT_SIZE, FONT_BOLD );
         JsonNode occupiedPositionsNode = skillsJson.get( OCCUPIED_POSITIONS );
         addList( tools, occupiedPositionsNode );
 
         // Domaines fonctionnels
-        tools.addText( FUNCTIONAL_DOMAINS.toUpperCase() + " :", 12, FONT_BOLD );
+        tools.addText( FUNCTIONAL_DOMAINS.toUpperCase() + " :", FONT_SIZE, FONT_BOLD );
         JsonNode functionalDomainNode = skillsJson.get( FUNCTIONAL_DOMAINS );
         addList( tools, functionalDomainNode );
     }
@@ -155,20 +169,41 @@ public class CreateSkillsPDF {
                     }
                 }
             }
-            tools.addText( sb.toString(), 12, FONT_PLAIN );
+            tools.addText( sb.toString(), FONT_SIZE, FONT_PLAIN );
         }
         tools.setCursorY( tools.getCursorY() - 5 );
+    }
+
+    private static String addList(JsonNode jsonNode) {
+        StringBuilder sb = new StringBuilder();
+        for (String key : TECHNICAL_KEYS) {
+            JsonNode item = jsonNode.get( key );
+            if (item != null && item.isArray()) {
+                for (int i = 0; i < item.size(); i++) {
+                    String elem = item.get( i ).asText();
+                    if (!elem.isEmpty()) {
+                        sb.append( elem );
+                        sb.append( ", " );
+                    }
+                }
+            }
+        }
+        sb.deleteCharAt( sb.length() - 1 );
+        sb.deleteCharAt( sb.length() - 1 );
+        return sb.toString();
     }
 
     private static void addEmployer(PDFBoxTools tools, JsonNode skillsJson) throws IOException {
         JsonNode employerNode = skillsJson.get( EMPLOYER );
         if (employerNode != null && employerNode.isArray()) {
             tools.addNewPage();
+            tools.setCursorY( A4.getHeight() - 40f );
             for (JsonNode employer : employerNode) {
                 final String employerHeader = getEmployerHeaderText( employer );
                 tools.setOnNewPage( () -> {
                     try {
-                        tools.addText( employerHeader + " (suite)", 14, FONT_BOLD );
+                        tools.setCursorY( A4.getHeight() - 40f );
+                        tools.addText( employerHeader + " (suite)", FONT_SIZE + 2, FONT_BOLD );
                         tools.setCursorY( tools.getCursorY() - 5 );
                     } catch (IOException e) {
                         logger.log( Logger.Level.ERROR, "Erreur lors de l'ajout du rappel de l'employeur", e );
@@ -198,27 +233,27 @@ public class CreateSkillsPDF {
     }
 
     private static void addEmployerInfo(PDFBoxTools tools, JsonNode employer) throws IOException {
-        tools.addText( getEmployerHeaderText( employer ), 14, FONT_BOLD );
+        tools.addText( getEmployerHeaderText( employer ), FONT_SIZE + 2, FONT_BOLD );
     }
 
     private static String getEmployerHeaderText(JsonNode employer) {
         String employerName = employer.has( NAME ) ? employer.get( NAME ).asText() : "";
         String functionalDomain = employer.has( FUNCTIONAL_DOMAIN ) ? employer.get( FUNCTIONAL_DOMAIN ).asText() : "";
-        String text = EMPLOYER.toUpperCase() + " : " + employerName.toUpperCase();
+        String text = EMPLOYER + " : " + employerName;
         if (functionalDomain != null && !functionalDomain.isEmpty()) {
-            text += " (" + functionalDomain.toUpperCase() + ")";
+            text += " (" + functionalDomain + ")";
         }
         return text;
     }
 
     private static float calculateEmployerHeaderHeight(PDFBoxTools tools, JsonNode employer) throws IOException {
-        return tools.calculateTextHeight( getEmployerHeaderText( employer ), 14, FONT_BOLD );
+        return tools.calculateTextHeight( getEmployerHeaderText( employer ), FONT_SIZE + 4, FONT_BOLD );
     }
 
     private static void addCustomer(PDFBoxTools tools, JsonNode customer) throws IOException {
         float estimatedHeight = 0;
         if (customer.has( NAME ) && !customer.get( NAME ).asText().isEmpty()) {
-            estimatedHeight += tools.calculateTextHeight( CUSTOMER.toUpperCase() + " : " + customer.get( NAME ).asText().toUpperCase(), 12, FONT_BOLD );
+            estimatedHeight += tools.calculateTextHeight( CUSTOMER + " : " + customer.get( NAME ).asText(), FONT_SIZE, FONT_BOLD );
         }
         estimatedHeight += calculateMissionHeight( tools, customer );
 
@@ -227,17 +262,17 @@ public class CreateSkillsPDF {
         }
 
         if (customer.has( NAME ) && !customer.get( NAME ).asText().isEmpty()) {
-            tools.addText( CUSTOMER.toUpperCase() + " : " + customer.get( NAME ).asText().toUpperCase(), 12, FONT_BOLD );
+            tools.addText( CUSTOMER + " : " + customer.get( NAME ).asText(), FONT_SIZE, FONT_BOLD );
         }
         addMission( tools, customer );
     }
 
     private static void addMission(PDFBoxTools tools, JsonNode node) throws IOException {
         addPeriod( tools, node );
-        addLabelValue( tools, POSITION_HELD, node.has( POSITION_HELD ) ? node.get( POSITION_HELD ).asText() : "", FONT_BOLD, 12 );
-        addLabelValue( tools, CONTEXT, node.has( CONTEXT ) ? node.get( CONTEXT ).asText() : "", FONT_BOLD, 12 );
-        addLabelValue( tools, REALISATION, node.has( REALISATION ) ? node.get( REALISATION ).asText() : "", FONT_BOLD, 12 );
-        addLabelValue( tools, TECHNICAL_ENVIRONMENT, node.has( TECHNICAL_ENVIRONMENT ) ? node.get( TECHNICAL_ENVIRONMENT ).asText() : "", FONT_BOLD, 12 );
+        addLabelValue( tools, POSITION_HELD, node.has( POSITION_HELD ) ? node.get( POSITION_HELD ).asText() : "", FONT_BOLD, FONT_SIZE, false );
+        addLabelValue( tools, CONTEXT, node.has( CONTEXT ) ? node.get( CONTEXT ).asText() : "", FONT_BOLD, FONT_SIZE, true );
+        addLabelValue( tools, REALISATION, node.has( REALISATION ) ? node.get( REALISATION ).asText() : "", FONT_BOLD, FONT_SIZE, true );
+        addLabelValue( tools, TECHNICAL_ENVIRONMENT, node.has( TECHNICALS ) ? addList( node.get( TECHNICALS ) ) : "", FONT_BOLD, FONT_SIZE, true );
         tools.setCursorY( tools.getCursorY() - 10 );
     }
 
@@ -256,21 +291,21 @@ public class CreateSkillsPDF {
                 String periodText = PERIOD.toUpperCase() + " : de " + getNameOfTheMonth( debut ) + " " + debut.get( "Année" ).asText()
                         + " à " + getNameOfTheMonth( fin ) + " " + fin.get( "Année" ).asText()
                         + " (" + difference + ")";
-                height += tools.calculateTextHeight( periodText, 12, FONT_PLAIN );
+                height += tools.calculateTextHeight( periodText, FONT_SIZE, FONT_PLAIN );
             }
         }
         // Labels
-        height += calculateLabelValueHeight( tools, POSITION_HELD, node.has( POSITION_HELD ) ? node.get( POSITION_HELD ).asText() : "", FONT_BOLD, 12 );
-        height += calculateLabelValueHeight( tools, CONTEXT, node.has( CONTEXT ) ? node.get( CONTEXT ).asText() : "", FONT_BOLD, 12 );
-        height += calculateLabelValueHeight( tools, REALISATION, node.has( REALISATION ) ? node.get( REALISATION ).asText() : "", FONT_BOLD, 12 );
-        height += calculateLabelValueHeight( tools, TECHNICAL_ENVIRONMENT, node.has( TECHNICAL_ENVIRONMENT ) ? node.get( TECHNICAL_ENVIRONMENT ).asText() : "", FONT_BOLD, 12 );
+        height += calculateLabelValueHeight( tools, POSITION_HELD, node.has( POSITION_HELD ) ? node.get( POSITION_HELD ).asText() : "", FONT_BOLD, FONT_SIZE );
+        height += calculateLabelValueHeight( tools, CONTEXT, node.has( CONTEXT ) ? node.get( CONTEXT ).asText() : "", FONT_BOLD, FONT_SIZE );
+        height += calculateLabelValueHeight( tools, REALISATION, node.has( REALISATION ) ? node.get( REALISATION ).asText() : "", FONT_BOLD, FONT_SIZE );
+        height += calculateLabelValueHeight( tools, TECHNICAL_ENVIRONMENT, node.has( TECHNICAL_ENVIRONMENT ) ? node.get( TECHNICAL_ENVIRONMENT ).asText() : "", FONT_BOLD, FONT_SIZE );
         height += 10; // Espacement final
         return height;
     }
 
     private static float calculateLabelValueHeight(PDFBoxTools tools, String label, String value, PDFont valueFont, float fontSize) throws IOException {
         if (label != null && value != null) {
-            return tools.calculateTextHeight( label.toUpperCase() + " : " + value, fontSize, valueFont );
+            return tools.calculateTextHeight( label + " : " + value, fontSize, valueFont );
         }
         return 0;
     }
@@ -287,10 +322,10 @@ public class CreateSkillsPDF {
                 Period differencePeriod = Period.between( dateDebut, dateFin );
                 String difference = getDifference( differencePeriod );
 
-                String periodText = PERIOD.toUpperCase() + " : de " + getNameOfTheMonth( debut ) + " " + debut.get( "Année" ).asText()
+                String periodText = PERIOD + " : de " + getNameOfTheMonth( debut ) + " " + debut.get( "Année" ).asText()
                         + " à " + getNameOfTheMonth( fin ) + " " + fin.get( "Année" ).asText()
                         + " (" + difference + ")";
-                tools.addText( periodText, 12, FONT_PLAIN );
+                tools.addText( periodText, FONT_SIZE, FONT_BOLD );
             }
         }
     }
@@ -313,7 +348,7 @@ public class CreateSkillsPDF {
     }
 
     private static void techniques(PDFBoxTools tools, JsonNode skillsJson, String technique) throws IOException {
-        JsonNode techniquesNode = skillsJson.get( TECHNIQUES );
+        JsonNode techniquesNode = skillsJson.get( TECHNICALS );
         if (techniquesNode.get( technique ) != null && !techniquesNode.get( technique ).isEmpty()) {
             StringBuilder sb = new StringBuilder();
             sb.append( technique ).append( " : " );
@@ -324,7 +359,7 @@ public class CreateSkillsPDF {
                     sb.append( ", " );
                 }
             }
-            tools.addText( sb.toString(), 12, FONT_PLAIN );
+            tools.addText( sb.toString(), FONT_SIZE, FONT_PLAIN );
         }
     }
 }
