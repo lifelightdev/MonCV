@@ -10,9 +10,6 @@ import java.io.IOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 
-import static life.light.CreateResumePDF.createResume;
-import static life.light.CreateSkillsPDF.createSkills;
-
 public class JsonToPdfResumeAndSkills {
 
     private static final Logger logger = System.getLogger( JsonToPdfResumeAndSkills.class.getName() );
@@ -45,28 +42,32 @@ public class JsonToPdfResumeAndSkills {
             return;
         }
 
+        String nameFile = resumeJson.get( "Nom" ).asText() + " " + resumeJson.get( "Prénom" ).asText();
+
+        // 1. Charger le JSON (Jackson)
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode monJson = mapper.readTree( new File( "important.json" ) );
+            // 2. Appeler le générateur
+            CVGenerator generator = new CVGenerator();
+            generator.generatePDFFromWord( "CV.docx", nameFile + " - CV.pdf", monJson );
+            generator.generatePDFFromWord( "Dossier de compétences.docx", nameFile + " - Dossier de compétences.pdf", monJson );
+        } catch (IOException e) {
+            throw new RuntimeException( e );
+        }
+
         // 2. Créer les documents PDF
         try {
             PDFMergerUtility ut = new PDFMergerUtility();
-            ut.addSource( createResume( resumeJson ) );
-            ut.addSource( createSkills( dossierCompetencesJson ) );
-            String nameFileResumePDF = resumeJson.get( "Nom" ).asText() + " " + resumeJson.get( "Prénom" ).asText() + " - CV et Dossier de compétence.pdf";
-            ut.setDestinationFileName( nameFileResumePDF );
+            ut.addSource( nameFile + " - CV.pdf" );
+            ut.addSource( nameFile + " - Dossier de compétences.pdf" );
+            String nameFiles = nameFile + " - CV et Dossier de compétence.pdf";
+            ut.setDestinationFileName( nameFiles );
 
-            try (FileOutputStream fos = new FileOutputStream( nameFileResumePDF )) {
+            try (FileOutputStream fos = new FileOutputStream( nameFiles )) {
                 ut.setDestinationStream( fos );
                 ut.mergeDocuments( null );
-
             }
-
-            // 1. Charger le JSON (Jackson)
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode monJson = mapper.readTree( new File( "important.json" ) );
-
-            // 2. Appeler le générateur
-            CVGenerator generator = new CVGenerator();
-            generator.generatePDFFromWord( "CV.docx", "MonCV_Final.pdf", monJson );
-
 
             logger.log( Level.INFO, "Fin de la génération des PDF" );
         } catch (Exception e) {
