@@ -7,7 +7,6 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 
 import java.io.IOException;
 
@@ -33,8 +32,8 @@ public class Tools {
     static final String[] TECHNICAL_KEYS = {"Langages", "Tests", "Frameworks", "Éditeurs de code", "Bases de données", "Intégration continue", "Versioning", "Bug tracker", "Autre outils", "Système d’exploitation", "Architectures", "Méthodologies"};
     static final String EMPLOYER = "Employeur";
     static final int FONT_SIZE = 14;
-    static final PDFont FONT_PLAIN = new PDType1Font( Standard14Fonts.FontName.TIMES_ROMAN );
-    static final PDFont FONT_BOLD = new PDType1Font( Standard14Fonts.FontName.TIMES_BOLD );
+    static final PDFont FONT_PLAIN = PDType1Font.TIMES_ROMAN;
+    static final PDFont FONT_BOLD = PDType1Font.TIMES_BOLD;
 
     static String getNameOfTheMonth(JsonNode debut) {
         int moisDebut = Integer.parseInt( debut.get( "Mois" ).asText() );

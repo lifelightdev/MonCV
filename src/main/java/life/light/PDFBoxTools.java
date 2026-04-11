@@ -12,13 +12,11 @@ import java.util.List;
 
 import static org.apache.pdfbox.pdmodel.PDPageContentStream.AppendMode.APPEND;
 import static org.apache.pdfbox.pdmodel.common.PDRectangle.A4;
-import static org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.TIMES_BOLD;
-import static org.apache.pdfbox.pdmodel.font.Standard14Fonts.FontName.TIMES_ROMAN;
 
 public class PDFBoxTools {
 
-    public static final PDFont FONT_PLAIN = new PDType1Font( TIMES_ROMAN );
-    public static final PDFont FONT_BOLD = new PDType1Font( TIMES_BOLD );
+    public static final PDFont FONT_PLAIN = PDType1Font.TIMES_ROMAN;
+    public static final PDFont FONT_BOLD = PDType1Font.TIMES_BOLD;
 
     private final PDDocument document;
     private PDPageContentStream contentStream;

@@ -1,6 +1,7 @@
 package life.light;
 
 import com.documents4j.api.DocumentType;
+import com.documents4j.api.IConverter;
 import com.documents4j.job.LocalConverter;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -65,14 +66,20 @@ public class CVGenerator {
         }
 
         // Utilisation de documents4j pour transformer le Word en PDF
+        // On instancie le convertisseur
+        IConverter converter = LocalConverter.builder().build();
         try (InputStream is = new FileInputStream( tempWord );
              OutputStream os = new FileOutputStream( outputPath )) {
 
-            LocalConverter.builder()
-                    .build()
-                    .convert( is ).as( DocumentType.DOCX )
+            converter.convert( is ).as( DocumentType.DOCX )
                     .to( os ).as( DocumentType.PDF )
                     .execute();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // TRÈS IMPORTANT pour documents4j : fermer le convertisseur lui-même
+            // C'est ce qui évite les messages de "Shutdown hook" désordonnés
+            converter.shutDown();
         }
 
         tempWord.delete(); // On supprime le fichier temporaire

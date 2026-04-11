@@ -2,13 +2,10 @@ package life.light;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.opensagres.poi.xwpf.converter.xhtml.XHTMLConverter;
-import fr.opensagres.poi.xwpf.converter.xhtml.XHTMLOptions;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -23,12 +20,56 @@ public class JsonToPdfResumeAndSkills {
 
     static void main() {
         lastExitCode = 0;
+        logger.log( Level.INFO, "Début" );
+        String exec = " DOC";
 
-        logger.log( Level.INFO, "Début de la génération des PDF" );
+        if (exec.contains( "DOC" )) {
+            extractedWordToPdf();
+        }
+        if (exec.contains( "HTML" )) {
+            logger.log( Level.INFO, "Début avec les fichiers html" );
+            String nameFileResumeJson = "CV.json";
+            JsonNode resumeJson = null;
+            try {
+                resumeJson = ReadJson.getCvJson( nameFileResumeJson );
+                // Validation du CV par rapport au schéma
+                String schemaPath = "src/main/resources/CV.schema.json";
+                ReadJson.validateJson( resumeJson, schemaPath );
+            } catch (IOException e) {
+                logger.log( Level.ERROR, "Erreur lors de la lecture des fichiers JSON ", e );
+                System.exit( -1 );
+            }
+
+            String nameFile = resumeJson.get( "Nom" ).asText() + " " + resumeJson.get( "Prénom" ).asText();
+            try (OutputStream os1 = new FileOutputStream( nameFile + " - CV.html.pdf" )) {
+                PdfRendererBuilder builder = new PdfRendererBuilder();
+                builder.useFastMode();
+
+                // On pointe vers votre fichier source
+                File htmlFile = new File( "CV.html" );
+                builder.withFile( htmlFile );
+
+                builder.toStream( os1 );
+                builder.run();
+                System.out.println( "PDF généré avec succès !" );
+            } catch (Exception e) {
+                logger.log( Level.ERROR, "Erreur lors de la génération des fichiers PDF à partir des fichiers HTML ", e );
+                System.exit( -1 );
+            }
+            logger.log( Level.INFO, "Fin avec les fichiers html" );
+
+        }
+
+        logger.log( Level.INFO, "Fin de la génération des PDF" );
+        System.exit( 0 );
+    }
+
+    private static void extractedWordToPdf() {
+        logger.log( Level.INFO, "Début avec les fichiers word" );
 
         String nameFileResumeJson = "CV.json";
         String nameFileDossierCompetencesJson = "DossierCompetences.json";
-        JsonNode resumeJson;
+        JsonNode resumeJson = null;
         JsonNode dossierCompetencesJson;
         try {
             resumeJson = ReadJson.getCvJson( nameFileResumeJson );
@@ -43,8 +84,7 @@ public class JsonToPdfResumeAndSkills {
 
         } catch (IOException e) {
             logger.log( Level.ERROR, "Erreur lors de la lecture des fichiers JSON ", e );
-            lastExitCode = -1;
-            return;
+            System.exit( -1 );
         }
 
         String nameFile = resumeJson.get( "Nom" ).asText() + " " + resumeJson.get( "Prénom" ).asText();
@@ -55,19 +95,20 @@ public class JsonToPdfResumeAndSkills {
             JsonNode monJson = mapper.readTree( new File( "important.json" ) );
             // 2. Appeler le générateur
             CVGenerator generator = new CVGenerator();
-            generator.generatePDFFromWord( "CV.docx", nameFile + " - CV.pdf", monJson );
-            generator.generatePDFFromWord( "CV - Sans images.docx", nameFile + " - CV - Sans images.pdf", monJson );
-            generator.generatePDFFromWord( "Dossier de compétences.docx", nameFile + " - Dossier de compétences.pdf", monJson );
+            generator.generatePDFFromWord( "CV.docx", nameFile + " - CV.docx.pdf", monJson );
+            generator.generatePDFFromWord( "CV - Sans images.docx", nameFile + " - CV - Sans images.docx.pdf", monJson );
+            generator.generatePDFFromWord( "Dossier de compétences.docx", nameFile + " - Dossier de compétences.docx.pdf", monJson );
         } catch (IOException e) {
-            throw new RuntimeException( e );
+            logger.log( Level.ERROR, "Échec de la génération du CV", e );
+            System.exit( 1 );
         }
 
         // 2. Créer les documents PDF
         try {
             PDFMergerUtility margeWithoutImages = new PDFMergerUtility();
-            margeWithoutImages.addSource( nameFile + " - CV - Sans images.pdf" );
-            margeWithoutImages.addSource( nameFile + " - Dossier de compétences.pdf" );
-            String nameFilesWithoutImages = nameFile + " - CV et Dossier de compétence - Sans images.pdf";
+            margeWithoutImages.addSource( nameFile + " - CV - Sans images.docx.pdf" );
+            margeWithoutImages.addSource( nameFile + " - Dossier de compétences.docx.pdf" );
+            String nameFilesWithoutImages = nameFile + " - CV et Dossier de compétence - Sans images.docx.pdf";
             margeWithoutImages.setDestinationFileName( nameFilesWithoutImages );
 
             try (FileOutputStream fos = new FileOutputStream( nameFilesWithoutImages )) {
@@ -75,30 +116,11 @@ public class JsonToPdfResumeAndSkills {
                 margeWithoutImages.mergeDocuments( null );
             }
 
-            PDFMergerUtility ut = new PDFMergerUtility();
-            ut.addSource( nameFile + " - CV.pdf" );
-            ut.addSource( nameFile + " - Dossier de compétences.pdf" );
-            String nameFiles = nameFile + " - CV et Dossier de compétence.pdf";
-            ut.setDestinationFileName( nameFiles );
-
-            try (FileOutputStream fos = new FileOutputStream( nameFiles )) {
-                ut.setDestinationStream( fos );
-                ut.mergeDocuments( null );
-            }
-
-            XWPFDocument document = new XWPFDocument( new FileInputStream( "Dossier de compétences.docx" ) );
-            XHTMLOptions options = XHTMLOptions.create();
-
-            // Exportation vers un fichier HTML
-            OutputStream out = new FileOutputStream( "Dossier de compétences.html" );
-            XHTMLConverter.getInstance().convert( document, out, options );
-
-            logger.log( Level.INFO, "Fin de la génération des PDF" );
         } catch (Exception e) {
             logger.log( Level.ERROR, "Échec de la génération du CV", e );
             System.exit( 1 );
         }
-        System.exit( 0 );
+        logger.log( Level.INFO, "Fin avec les fichiers word" );
     }
 
 }
