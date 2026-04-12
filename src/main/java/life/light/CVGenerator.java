@@ -18,20 +18,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import static java.lang.System.Logger.Level.ERROR;
-import static java.lang.System.Logger.Level.INFO;
 
 public class CVGenerator {
 
     private static final System.Logger logger = System.getLogger( CVGenerator.class.getName() );
-    Map<String, List<String>> skillsName = new HashMap<>();
+    //Map<String, List<String>> skillsName = new HashMap<>();
 
-    public CVGenerator() {
+    /*public CVGenerator() {
         skillsName.put( "Langages", new ArrayList<>() );
         skillsName.put( "Test", new ArrayList<>() );
         skillsName.put( "Frameworks", new ArrayList<>() );
@@ -46,7 +44,7 @@ public class CVGenerator {
         skillsName.put( "Méthodologie", new ArrayList<>() );
         skillsName.put( "Postes ", new ArrayList<>() );
         skillsName.put( "Domaine fonctionnel ", new ArrayList<>() );
-    }
+    }*/
 
     /**
      * @param templatePath Chemin du fichier Word existant (ex: "mon_cv.docx")
@@ -75,7 +73,7 @@ public class CVGenerator {
                 }
             }
 
-            for (Map.Entry<String, List<String>> entry : skillsName.entrySet()) {
+            /*for (Map.Entry<String, List<String>> entry : skillsName.entrySet()) {
                 StringBuilder sb = new StringBuilder();
                 String key = entry.getKey();
                 List<String> details = entry.getValue();
@@ -86,7 +84,7 @@ public class CVGenerator {
                     sb.append( ", " );
                 }
                 logger.log( INFO, sb + "\n" );
-            }
+            }*/
 
             // 3. Conversion en PDF
             convertToPDF( document, outputPath );
@@ -119,7 +117,7 @@ public class CVGenerator {
     }
 
     private void processParagraph(XWPFParagraph p, JsonNode rootNode) {
-        List<XWPFRun> paragraph = p.getRuns();
+        /*List<XWPFRun> paragraph = p.getRuns();
 
         if (!paragraph.isEmpty()) {
             for (XWPFRun pa : paragraph) {
@@ -158,7 +156,7 @@ public class CVGenerator {
                     }
                 }
             }
-        }
+        }*/
         List<XWPFRun> runs = new ArrayList<>( p.getRuns() ); // Copie pour éviter les erreurs de modification
 
         for (XWPFRun run : runs) {

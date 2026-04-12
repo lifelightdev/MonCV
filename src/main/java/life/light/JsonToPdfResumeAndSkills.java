@@ -61,6 +61,15 @@ public class JsonToPdfResumeAndSkills {
         }
 
         logger.log( Level.INFO, "Fin de la génération des PDF" );
+        logger.log( Level.INFO, "Check" );
+        CheckSkills checkSkills = new CheckSkills();
+        try {
+            checkSkills.testCheckLanguagesCoherence();
+        } catch (IOException e) {
+            logger.log( Level.ERROR, "Erreur lors du check ", e );
+            System.exit( -1 );
+        }
+
         System.exit( 0 );
     }
 
