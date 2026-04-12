@@ -2,7 +2,6 @@ package life.light;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +18,7 @@ class PDFBoxToolsTest {
         try (PDDocument document = new PDDocument()) {
             PDFBoxTools tools = new PDFBoxTools( document, null );
             float fontSize = 12f;
-            PDType1Font font = new PDType1Font( Standard14Fonts.FontName.HELVETICA );
+            PDType1Font font = PDType1Font.HELVETICA;
 
             // Une seule ligne
             String shortText = "Petit texte";
